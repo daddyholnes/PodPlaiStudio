@@ -1,7 +1,7 @@
 // Define the connection protocol based on the current environment
 const getWebSocketUrl = () => {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${protocol}//${window.location.host}/ws`;
+  return `${protocol}//${window.location.host}/api/ws`;
 };
 
 // WebSocket connection instance
