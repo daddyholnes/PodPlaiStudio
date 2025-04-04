@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { useGeminiContext } from '@/hooks/use-gemini-context';
 import { useQuery } from '@tanstack/react-query';
 
+interface ApiStatus {
+  apiKeyConfigured?: boolean;
+  apiKeyMasked?: string;
+}
+
 export default function ConfigPanel() {
   const { 
     modelConfig, 
@@ -10,8 +15,12 @@ export default function ConfigPanel() {
   } = useGeminiContext();
   
   // Query API status
-  const { data: apiStatus } = useQuery({
+  const { data: apiStatus } = useQuery<ApiStatus>({
     queryKey: ['/api/status'],
+    initialData: {
+      apiKeyConfigured: true,
+      apiKeyMasked: 'GEMINI_API_KEY_****',
+    }
   });
   
   const [showApiKey, setShowApiKey] = useState(false);
@@ -167,7 +176,7 @@ export default function ConfigPanel() {
                 Configured
               </span>
             ) : (
-              <span className="text-error flex items-center">
+              <span className="text-red-500 flex items-center">
                 <span className="material-icons text-xs mr-1">error</span>
                 Missing
               </span>
