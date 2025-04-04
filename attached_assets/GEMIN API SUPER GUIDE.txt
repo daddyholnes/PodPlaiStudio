@@ -1,0 +1,426 @@
+Below, I’ve updated the "Super Guide" by integrating the Firebase Vertex AI and Genkit resources you provided. After that, I’ll research n8n and propose a workflow template in JSON format for a "Chat and Code Building Super LLM Agent" tailored to your Flask application.
+
+---
+
+# Super Guide: Enhancing Your Flask App with Gemini API, Gemma Models, Firebase Vertex AI/Genkit, and Real-Time Features
+
+This guide is your ultimate resource for enhancing your Flask application (`app.py`) with Google’s Gemini API, Gemma models, Firebase Vertex AI and Genkit frameworks, and real-time features like webcam/screen-sharing using WebSockets. It’s tailored to your existing code, combining `google.generativeai` for Gemini API, `Flask-SocketIO` for real-time capabilities, and Firebase’s AI tools for additional flexibility. We’ll cover setup, text generation, multimodal inputs, real-time streaming, advanced features, and a bonus n8n workflow template for a chat/code-building super LLM agent.
+
+The current date is **April 04, 2025**, and this guide leverages the latest updates available.
+
+---
+
+## Table of Contents
+
+1. [Setup and Prerequisites](#1-setup-and-prerequisites)
+2. [Model Overview](#2-model-overview)
+   - [Gemini Models](#gemini-models)
+   - [Gemma Models](#gemma-models)
+   - [Firebase Vertex AI and Genkit](#firebase-vertex-ai-and-genkit)
+3. [Basic Text Generation](#3-basic-text-generation)
+4. [Multimodal Inputs](#4-multimodal-inputs)
+   - [Images](#images)
+   - [Audio](#audio)
+   - [Video](#video)
+   - [Documents](#documents)
+5. [Chat with History](#5-chat-with-history)
+6. [Real-Time Features with WebSockets](#6-real-time-features-with-websockets)
+   - [Webcam Streaming](#webcam-streaming)
+   - [Screen Sharing](#screen-sharing)
+   - [Text-to-Speech (TTS)](#text-to-speech-tts)
+7. [Advanced Features](#7-advanced-features)
+   - [Function Calling](#function-calling)
+   - [Controlled Generation](#controlled-generation)
+   - [Code Execution](#code-execution)
+   - [Firebase Genkit Features](#firebase-genkit-features)
+8. [Integrating Gemma Models (Optional)](#8-integrating-gemma-models-optional)
+9. [n8n Workflow Template: Chat and Code Building Super LLM Agent](#9-n8n-workflow-template-chat-and-code-building-super-llm-agent)
+10. [Tips and Troubleshooting](#10-tips-and-troubleshooting)
+
+---
+
+## 1. Setup and Prerequisites
+
+### What You Need
+- **Python 3.8+**: Already in your app.
+- **API Keys**:
+  - Gemini API key from Google AI Studio (`GEMINI_API_KEY` in `.env`).
+  - Firebase Vertex AI key (via Firebase project setup).
+- **Libraries**:
+  - `google-generativeai`: For Gemini API (`pip install google-generativeai`).
+  - `flask-socketio`: For real-time features (`pip install flask-socketio`).
+  - `firebase-genkit`: For Genkit features (`npm install @genkit/core @genkit/firebase` for Node.js integration).
+  - `transformers` (optional): For Gemma models (`pip install transformers`).
+  - `PyPDF2` (optional): For PDFs (`pip install PyPDF2`).
+- **Firebase Setup**: Firebase project with Vertex AI enabled (see [Get Started](https://firebase.google.com/docs/vertex-ai/get-started?platform=web)).
+
+### Update Your `app.py`
+Combine Flask, SocketIO, and Firebase setups:
+
+```python
+import os
+import json
+import time
+import uuid
+import base64
+from flask import Flask, request, jsonify, session, send_from_directory
+from flask_cors import CORS
+from flask_socketio import SocketIO, emit
+from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
+import google.generativeai as genai
+
+# Load environment variables
+load_dotenv()
+
+# Configure Gemini API key
+api_key = os.environ.get("GEMINI_API_KEY")
+if api_key:
+    genai.configure(api_key=api_key)
+    print("Gemini API key found in environment variables.")
+else:
+    print("WARNING: GEMINI_API_KEY not set. App functionality will be limited.")
+
+# Initialize Flask app
+app = Flask(__name__, static_folder='../client/build')
+CORS(app, supports_credentials=True)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+
+# Configure session and uploads
+app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", "gemini-app-secret-key")
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'mp3', 'wav', 'mp4', 'mov'}
+```
+
+For Firebase Vertex AI/Genkit, you’ll need a Node.js companion (e.g., via Firebase Functions), detailed later.
+
+---
+
+## 2. Model Overview
+
+### Gemini Models
+Hosted by Google, accessed via API:
+- **`gemini-1.5-pro`**: Multimodal (text, images, audio, video).
+- **`gemini-2.0-flash`**: Fast, real-time capable.
+
+### Gemma Models
+Open-source, local execution:
+- **`gemma-2b`**: Lightweight, text-focused.
+- **`paliGemma`**: Vision + text.
+
+### Firebase Vertex AI and Genkit
+- **Vertex AI**: Integrates Gemini models with Firebase for web, iOS, Android ([Vertex AI Docs](https://firebase.google.com/docs/vertex-ai/get-started?platform=web)).
+- **Genkit**: Framework for building AI apps with Firebase, supporting flows, chat, and RAG ([Genkit Docs](https://firebase.google.com/docs/genkit)).
+
+---
+
+## 3. Basic Text Generation
+### Code
+Your existing `call_gemini_api`:
+
+```python
+def call_gemini_api(message, model_id='gemini-1.5-pro', temperature=0.7, files=None):
+    try:
+        model = genai.GenerativeModel(model_id)
+        parts = [{"text": message}]
+        response = model.generate_content(parts, generation_config=genai.types.GenerationConfig(temperature=temperature))
+        return response.text
+    except Exception as e:
+        print(f"Error calling Gemini API: {e}")
+        return f"Error: {str(e)}"
+
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    data = request.json
+    message = data.get('message')
+    model_id = data.get('selectedModel', 'gemini-1.5-pro')
+    temperature = data.get('temperature', 0.7)
+    current_api_key = data.get('apiKey') or session.get('api_key') or api_key
+    genai.configure(api_key=current_api_key)
+    response = call_gemini_api(message, model_id, temperature)
+    return jsonify({'response': response, 'timestamp': time.time()})
+```
+
+---
+
+## 4. Multimodal Inputs
+### Images, Audio, Video, Documents
+Your `call_gemini_api` already supports these—see previous sections for details. Add Firebase Vertex AI for enhanced multimodal support later in [Firebase Genkit Features](#firebase-genkit-features).
+
+---
+
+## 5. Chat with History
+### Code
+Your `call_gemini_with_history` works well—see previous guide.
+
+---
+
+## 6. Real-Time Features with WebSockets
+### Webcam Streaming, Screen Sharing, TTS
+See previous sections—unchanged here.
+
+---
+
+## 7. Advanced Features
+### Function Calling, Controlled Generation, Code Execution
+See previous sections—unchanged.
+
+### Firebase Genkit Features
+Firebase Genkit adds flows, chat, and RAG capabilities. Here’s how to integrate it with your Flask app via Firebase Functions:
+
+#### Setup Firebase Functions
+1. Initialize Firebase:
+   ```bash
+   npm install -g firebase-tools
+   firebase init functions
+   ```
+2. Install Genkit:
+   ```bash
+   cd functions
+   npm install @genkit/core @genkit/firebase @genkit/googleai
+   ```
+
+#### Example Function (functions/index.js)
+```javascript
+const { onFlow, configureGenkit } = require('@genkit/core');
+const { googleAI } = require('@genkit/googleai');
+const { initializeApp } = require('firebase-admin/app');
+const { defineFlow } = require('@genkit/flow');
+
+initializeApp();
+configureGenkit({ plugins: [googleAI({ apiKey: process.env.GEMINI_API_KEY })] });
+
+exports.chatWithPDF = defineFlow(
+  {
+    name: 'chatWithPDF',
+    inputSchema: { type: 'object', properties: { message: { type: 'string' }, pdfUrl: { type: 'string' } } },
+    outputSchema: { type: 'string' }
+  },
+  async ({ message, pdfUrl }) => {
+    const response = await googleAI.generateText({
+      model: 'gemini-1.5-pro',
+      prompt: `${message}\n\nPDF Content: [fetch and extract from ${pdfUrl}]`
+    });
+    return response.text;
+  }
+);
+```
+
+#### Call from Flask
+```python
+import requests
+
+@app.route('/api/firebase-chat', methods=['POST'])
+def firebase_chat():
+    data = request.json
+    message = data.get('message')
+    pdf_url = data.get('pdfUrl')
+    response = requests.post(
+        'https://<your-firebase-region>-<project-id>.cloudfunctions.net/chatWithPDF',
+        json={'message': message, 'pdfUrl': pdf_url}
+    )
+    return jsonify(response.json())
+```
+
+#### Resources
+- [Genkit Chat](https://firebase.google.com/docs/genkit/chat)
+- [RAG](https://firebase.google.com/docs/genkit/rag)
+- [Tool Calling](https://firebase.google.com/docs/genkit/tool-calling)
+
+---
+
+## 8. Integrating Gemma Models (Optional)
+See previous section—unchanged.
+
+---
+
+## 9. n8n Workflow Template: Chat and Code Building Super LLM Agent
+
+### Research on n8n
+n8n is a fair-code workflow automation tool with native AI capabilities, supporting over 400 integrations. It’s ideal for building agentic workflows with LLMs like Gemini, OpenAI, or local models via Ollama. Key features:
+- **Nodes**: Chat Trigger, AI Agent, Tools (e.g., Code, HTTP Request).
+- **Memory**: Window Buffer for chat history.
+- **Visual Editor**: Drag-and-drop workflow design.
+- **Use Case**: Perfect for a chat/code-building agent that generates code and interacts with users.
+
+### Workflow Concept
+A "Chat and Code Building Super LLM Agent" that:
+- Responds to user queries via chat.
+- Generates Python code based on prompts.
+- Executes code and returns results.
+- Uses Gemini API for reasoning and Firebase for external data (e.g., PDFs).
+
+### n8n Workflow Template (JSON)
+```json
+{
+  "name": "Chat and Code Building Super LLM Agent",
+  "nodes": [
+    {
+      "id": "1",
+      "type": "n8n-nodes-base.chatTrigger",
+      "name": "Chat Trigger",
+      "position": [250, 300],
+      "parameters": {
+        "triggerMode": "manual"
+      }
+    },
+    {
+      "id": "2",
+      "type": "n8n-nodes-base.aiAgent",
+      "name": "Super LLM Agent",
+      "position": [450, 300],
+      "parameters": {
+        "agentType": "toolsAgent",
+        "systemMessage": "You are a super LLM agent that chats with users and builds Python code. Use tools to execute code or fetch data.",
+        "memory": "windowBuffer",
+        "memoryWindowSize": 10,
+        "chatModel": "googleGemini",
+        "model": "gemini-1.5-pro",
+        "credentials": {
+          "googleGeminiApi": {
+            "apiKey": "{{ $env.GEMINI_API_KEY }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "3",
+      "type": "n8n-nodes-base.code",
+      "name": "Execute Python Code",
+      "position": [650, 200],
+      "parameters": {
+        "code": "def run_code(input):\n    try:\n        exec(input)\n        return 'Code executed successfully'\n    except Exception as e:\n        return str(e)",
+        "inputs": {
+          "input": "{{ $json['prompt'] }}"
+        },
+        "outputs": {
+          "output": "result"
+        }
+      }
+    },
+    {
+      "id": "4",
+      "type": "n8n-nodes-base.httpRequest",
+      "name": "Fetch Firebase Data",
+      "position": [650, 400],
+      "parameters": {
+        "method": "POST",
+        "url": "https://<your-firebase-region>-<project-id>.cloudfunctions.net/chatWithPDF",
+        "options": {
+          "body": {
+            "message": "{{ $json['prompt'] }}",
+            "pdfUrl": "{{ $json['pdfUrl'] || '' }}"
+          },
+          "headers": {
+            "Content-Type": "application/json"
+          }
+        }
+      }
+    },
+    {
+      "id": "5",
+      "type": "n8n-nodes-base.set",
+      "name": "Format Response",
+      "position": [850, 300],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "response",
+              "value": "{{ $node['Execute Python Code'].json['result'] || $node['Fetch Firebase Data'].json['data'] || $node['Super LLM Agent'].json['text'] }}"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "Super LLM Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Super LLM Agent": {
+      "main": [
+        [
+          {
+            "node": "Execute Python Code",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Firebase Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Python Code": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Firebase Data": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "UTC",
+    "saveExecutionProgress": true
+  }
+}
+```
+
+### How It Works
+1. **Chat Trigger**: Captures user input (e.g., "Write a Python function to add two numbers").
+2. **Super LLM Agent**: Uses Gemini to interpret the prompt and decide actions:
+   - Generate code → Route to "Execute Python Code".
+   - Fetch data (e.g., from a PDF) → Route to "Fetch Firebase Data".
+   - Direct response → Pass to "Format Response".
+3. **Execute Python Code**: Runs the generated code and returns results.
+4. **Fetch Firebase Data**: Calls the Firebase Function for external data.
+5. **Format Response**: Combines outputs and sends back to the user.
+
+### Setup in n8n
+- Import the JSON into n8n’s workflow editor.
+- Set `GEMINI_API_KEY` in n8n’s environment variables.
+- Deploy the Firebase Function (`firebase deploy --only functions`).
+
+---
+
+## 10. Tips and Troubleshooting
+- **Firebase Errors**: Ensure Vertex AI is enabled in your Firebase project.
+- **n8n Issues**: Verify node connections and API keys.
+- **Performance**: Use `gemini-2.0-flash` for real-time tasks.
+
+---
+
+This Super Guide now includes Firebase Vertex AI/Genkit and an n8n workflow template, enhancing your Flask app with a powerful chat/code-building agent. Let me know if you’d like to refine the n8n template further!
