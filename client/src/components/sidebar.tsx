@@ -47,9 +47,20 @@ export default function Sidebar({ activeTab }: SidebarProps) {
             value={modelConfig.model}
             onChange={(e) => updateModelConfig({ model: e.target.value })}
           >
+            {/* Gemini 2.5 models */}
+            <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview</option>
+            
+            {/* Gemini 2.0 models */}
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+            <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash-Lite</option>
+            
+            {/* Gemini 1.5 models */}
             <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
             <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-            <option value="gemini-1.0-pro">Gemini 1.0 Pro</option>
+            <option value="gemini-1.5-flash-8b">Gemini 1.5 Flash-8B</option>
+            
+            {/* Legacy models */}
+            <option value="gemini-pro">Gemini 1.0 Pro</option>
           </select>
           <span className="material-icons absolute right-2 top-2 text-neutral-500 pointer-events-none">arrow_drop_down</span>
         </div>

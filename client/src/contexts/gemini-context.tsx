@@ -48,7 +48,7 @@ interface GeminiContextType {
 
 // Default model configuration
 const defaultModelConfig: ModelConfig = {
-  model: 'gemini-1.5-pro',
+  model: 'gemini-2.5-pro-preview-03-25',
   temperature: 0.7,
   maxOutputTokens: 2048,
   topK: 40,

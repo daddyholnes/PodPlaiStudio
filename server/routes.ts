@@ -55,88 +55,343 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const data = JSON.parse(message.toString());
         
         // Handle different message types
-        if (data.type === "generate" && data.stream) {
-          // Handle streaming generation
-          const { model, messages, parameters, conversationId } = data;
-          
-          // Start the streaming response
-          try {
-            const streamResponse = await generateContentStream(model, messages, parameters);
+        switch (data.type) {
+          case "generate": {
+            // Handle text generation (streaming or non-streaming)
+            const { model, messages, parameters, conversationId, stream } = data;
             
-            // Setup reading the stream
-            const reader = streamResponse.body?.getReader();
-            if (!reader) {
-              ws.send(JSON.stringify({ 
-                type: "error", 
-                error: "Failed to get stream reader" 
-              }));
-              return;
-            }
-            
-            // Process the stream chunks
-            const decoder = new TextDecoder();
-            let buffer = "";
-            
-            const processStream = async () => {
+            if (stream) {
+              // Start the streaming response
               try {
-                const { done, value } = await reader.read();
+                const streamResponse = await generateContentStream(model, messages, parameters);
                 
-                if (done) {
-                  ws.send(JSON.stringify({ type: "done" }));
+                // Setup reading the stream
+                const reader = streamResponse.body?.getReader();
+                if (!reader) {
+                  ws.send(JSON.stringify({ 
+                    type: "error", 
+                    error: "Failed to get stream reader" 
+                  }));
                   return;
                 }
                 
-                // Decode and process the chunk
-                buffer += decoder.decode(value, { stream: true });
+                // Process the stream chunks
+                const decoder = new TextDecoder();
+                let buffer = "";
                 
-                // Split by newlines to get SSE events
-                const lines = buffer.split('\n');
-                buffer = lines.pop() || "";
-                
-                for (const line of lines) {
-                  if (line.startsWith('data:')) {
-                    const data = line.slice(5).trim();
-                    if (data === '[DONE]') {
+                const processStream = async () => {
+                  try {
+                    const { done, value } = await reader.read();
+                    
+                    if (done) {
                       ws.send(JSON.stringify({ type: "done" }));
                       return;
                     }
                     
-                    try {
-                      const parsedData = JSON.parse(data);
-                      
-                      // Extract the content and send it
-                      if (parsedData.candidates && parsedData.candidates[0]?.content) {
-                        ws.send(JSON.stringify({ 
-                          type: "chunk", 
-                          content: parsedData.candidates[0].content,
-                          conversationId
-                        }));
+                    // Decode and process the chunk
+                    buffer += decoder.decode(value, { stream: true });
+                    
+                    // Split by newlines to get SSE events
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || "";
+                    
+                    for (const line of lines) {
+                      if (line.startsWith('data:')) {
+                        const data = line.slice(5).trim();
+                        if (data === '[DONE]') {
+                          ws.send(JSON.stringify({ type: "done" }));
+                          return;
+                        }
+                        
+                        try {
+                          const parsedData = JSON.parse(data);
+                          
+                          // Extract the content and send it
+                          if (parsedData.candidates && parsedData.candidates[0]?.content) {
+                            ws.send(JSON.stringify({ 
+                              type: "chunk", 
+                              content: parsedData.candidates[0].content,
+                              conversationId
+                            }));
+                          }
+                        } catch (e) {
+                          console.error('Error parsing JSON from stream:', e);
+                        }
                       }
-                    } catch (e) {
-                      console.error('Error parsing JSON from stream:', e);
                     }
+                    
+                    // Continue processing the stream
+                    processStream();
+                  } catch (error) {
+                    console.error('Error processing stream:', error);
+                    ws.send(JSON.stringify({ 
+                      type: "error", 
+                      error: error instanceof Error ? error.message : String(error) 
+                    }));
                   }
-                }
+                };
                 
-                // Continue processing the stream
                 processStream();
               } catch (error) {
-                console.error('Error processing stream:', error);
+                console.error('Error generating content stream:', error);
                 ws.send(JSON.stringify({ 
                   type: "error", 
                   error: error instanceof Error ? error.message : String(error) 
                 }));
               }
-            };
+            } else {
+              // Non-streaming generation
+              try {
+                const response = await generateContent(model, messages, parameters);
+                
+                ws.send(JSON.stringify({
+                  type: "result",
+                  content: response.candidates?.[0]?.content,
+                  conversationId
+                }));
+              } catch (error) {
+                console.error('Error generating content:', error);
+                ws.send(JSON.stringify({ 
+                  type: "error", 
+                  error: error instanceof Error ? error.message : String(error) 
+                }));
+              }
+            }
+            break;
+          }
+          
+          case "chat": {
+            // Handle chat messages (streaming or non-streaming)
+            const { model, messages, parameters, conversationId, stream } = data;
             
-            processStream();
-          } catch (error) {
-            console.error('Error generating content stream:', error);
+            if (stream) {
+              // Use the same stream handling as the generate endpoint
+              try {
+                const streamResponse = await generateContentStream(model, messages, parameters);
+                
+                // Setup reading the stream
+                const reader = streamResponse.body?.getReader();
+                if (!reader) {
+                  ws.send(JSON.stringify({ 
+                    type: "error", 
+                    error: "Failed to get stream reader" 
+                  }));
+                  return;
+                }
+                
+                // Process the stream chunks
+                const decoder = new TextDecoder();
+                let buffer = "";
+                
+                const processStream = async () => {
+                  try {
+                    const { done, value } = await reader.read();
+                    
+                    if (done) {
+                      ws.send(JSON.stringify({ type: "done" }));
+                      return;
+                    }
+                    
+                    // Decode and process the chunk
+                    buffer += decoder.decode(value, { stream: true });
+                    
+                    // Split by newlines to get SSE events
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || "";
+                    
+                    for (const line of lines) {
+                      if (line.startsWith('data:')) {
+                        const data = line.slice(5).trim();
+                        if (data === '[DONE]') {
+                          ws.send(JSON.stringify({ type: "done" }));
+                          return;
+                        }
+                        
+                        try {
+                          const parsedData = JSON.parse(data);
+                          
+                          // Extract the content and send it
+                          if (parsedData.candidates && parsedData.candidates[0]?.content) {
+                            ws.send(JSON.stringify({ 
+                              type: "chunk", 
+                              content: parsedData.candidates[0].content,
+                              conversationId
+                            }));
+                          }
+                        } catch (e) {
+                          console.error('Error parsing JSON from stream:', e);
+                        }
+                      }
+                    }
+                    
+                    // Continue processing the stream
+                    processStream();
+                  } catch (error) {
+                    console.error('Error processing stream:', error);
+                    ws.send(JSON.stringify({ 
+                      type: "error", 
+                      error: error instanceof Error ? error.message : String(error) 
+                    }));
+                  }
+                };
+                
+                processStream();
+              } catch (error) {
+                console.error('Error generating chat stream:', error);
+                ws.send(JSON.stringify({ 
+                  type: "error", 
+                  error: error instanceof Error ? error.message : String(error) 
+                }));
+              }
+            } else {
+              // Non-streaming chat
+              try {
+                const response = await generateContent(model, messages, parameters);
+                
+                ws.send(JSON.stringify({
+                  type: "result",
+                  content: response.candidates?.[0]?.content,
+                  conversationId
+                }));
+              } catch (error) {
+                console.error('Error generating chat content:', error);
+                ws.send(JSON.stringify({ 
+                  type: "error", 
+                  error: error instanceof Error ? error.message : String(error) 
+                }));
+              }
+            }
+            break;
+          }
+          
+          case "code": {
+            // Handle code generation (streaming or non-streaming)
+            const { model, messages, parameters, conversationId, stream } = data;
+            
+            // Code generation uses the same API as text generation but with different prompt formatting
+            if (stream) {
+              try {
+                const streamResponse = await generateContentStream(model, messages, parameters);
+                
+                // Setup reading the stream
+                const reader = streamResponse.body?.getReader();
+                if (!reader) {
+                  ws.send(JSON.stringify({ 
+                    type: "error", 
+                    error: "Failed to get stream reader" 
+                  }));
+                  return;
+                }
+                
+                // Process the stream chunks
+                const decoder = new TextDecoder();
+                let buffer = "";
+                
+                const processStream = async () => {
+                  try {
+                    const { done, value } = await reader.read();
+                    
+                    if (done) {
+                      ws.send(JSON.stringify({ type: "done" }));
+                      return;
+                    }
+                    
+                    // Decode and process the chunk
+                    buffer += decoder.decode(value, { stream: true });
+                    
+                    // Split by newlines to get SSE events
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || "";
+                    
+                    for (const line of lines) {
+                      if (line.startsWith('data:')) {
+                        const data = line.slice(5).trim();
+                        if (data === '[DONE]') {
+                          ws.send(JSON.stringify({ type: "done" }));
+                          return;
+                        }
+                        
+                        try {
+                          const parsedData = JSON.parse(data);
+                          
+                          // Extract the content and send it
+                          if (parsedData.candidates && parsedData.candidates[0]?.content) {
+                            ws.send(JSON.stringify({ 
+                              type: "chunk", 
+                              content: parsedData.candidates[0].content,
+                              conversationId
+                            }));
+                          }
+                        } catch (e) {
+                          console.error('Error parsing JSON from stream:', e);
+                        }
+                      }
+                    }
+                    
+                    // Continue processing the stream
+                    processStream();
+                  } catch (error) {
+                    console.error('Error processing stream:', error);
+                    ws.send(JSON.stringify({ 
+                      type: "error", 
+                      error: error instanceof Error ? error.message : String(error) 
+                    }));
+                  }
+                };
+                
+                processStream();
+              } catch (error) {
+                console.error('Error generating code stream:', error);
+                ws.send(JSON.stringify({ 
+                  type: "error", 
+                  error: error instanceof Error ? error.message : String(error) 
+                }));
+              }
+            } else {
+              // Non-streaming code generation
+              try {
+                const response = await generateContent(model, messages, parameters);
+                
+                ws.send(JSON.stringify({
+                  type: "result",
+                  content: response.candidates?.[0]?.content,
+                  conversationId
+                }));
+              } catch (error) {
+                console.error('Error generating code content:', error);
+                ws.send(JSON.stringify({ 
+                  type: "error", 
+                  error: error instanceof Error ? error.message : String(error) 
+                }));
+              }
+            }
+            break;
+          }
+          
+          case "token_count": {
+            // Handle token counting
+            try {
+              const { text } = data;
+              const count = countTokens(text);
+              ws.send(JSON.stringify({
+                type: "token_count",
+                count
+              }));
+            } catch (error) {
+              console.error('Error counting tokens:', error);
+              ws.send(JSON.stringify({ 
+                type: "error", 
+                error: error instanceof Error ? error.message : String(error) 
+              }));
+            }
+            break;
+          }
+          
+          default:
             ws.send(JSON.stringify({ 
               type: "error", 
-              error: error instanceof Error ? error.message : String(error) 
+              error: `Unknown message type: ${data.type}` 
             }));
-          }
         }
       } catch (error) {
         console.error('Error processing WebSocket message:', error);

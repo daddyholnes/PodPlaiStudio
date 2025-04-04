@@ -20,11 +20,17 @@ export function useConversations() {
 
   // Create a new conversation
   const createConversationMutation = useMutation({
-    mutationFn: async (model: string) => {
-      // Generate a default title with timestamp
-      const now = new Date();
-      const title = `New conversation (${now.toLocaleTimeString()})`;
-      const response = await apiRequest('POST', '/api/conversations', { title, model });
+    mutationFn: async ({ model, title }: { model: string; title?: string }) => {
+      // Generate a default title with timestamp if not provided
+      let conversationTitle = title;
+      if (!conversationTitle) {
+        const now = new Date();
+        conversationTitle = `New conversation (${now.toLocaleTimeString()})`;
+      }
+      const response = await apiRequest('POST', '/api/conversations', { 
+        title: conversationTitle, 
+        model 
+      });
       return response.json();
     },
     onSuccess: (data) => {
@@ -33,6 +39,11 @@ export function useConversations() {
       setSelectedConversationId(data.id);
     },
   });
+
+  // Helper function to match the expected signature in components
+  const createNewConversation = async (model: string, title?: string) => {
+    return createConversationMutation.mutateAsync({ model, title });
+  };
 
   // Update a conversation title
   const updateConversationMutation = useMutation({
@@ -65,7 +76,7 @@ export function useConversations() {
     setSelectedConversationId,
     isLoading,
     isError,
-    createNewConversation: createConversationMutation.mutate,
+    createNewConversation,
     isCreating: createConversationMutation.isPending,
     updateConversation: updateConversationMutation.mutate,
     isUpdating: updateConversationMutation.isPending,

@@ -15,10 +15,28 @@ if (!GEMINI_API_KEY) {
 
 // Models available in Gemini
 export const GEMINI_MODELS = {
-  "gemini-pro": "models/gemini-pro",
-  "gemini-flash": "models/gemini-1.5-flash",
-  "gemini-ultra": "models/gemini-ultra",
+  // Gemini 2.5 models
+  "gemini-2.5-pro-preview-03-25": "models/gemini-2.5-pro-preview-03-25", // Default - Enhanced thinking and reasoning
+  
+  // Gemini 2.0 models
+  "gemini-2.0-flash": "models/gemini-2.0-flash", // Next generation features, speed, thinking
+  "gemini-2.0-flash-lite": "models/gemini-2.0-flash-lite", // Cost efficiency and low latency
+  
+  // Gemini 1.5 models
+  "gemini-1.5-flash": "models/gemini-1.5-flash", // Fast and versatile performance
+  "gemini-1.5-flash-8b": "models/gemini-1.5-flash-8b", // High volume and lower intelligence tasks
+  "gemini-1.5-pro": "models/gemini-1.5-pro", // Complex reasoning tasks requiring more intelligence
+  
+  // Legacy models
+  "gemini-pro": "models/gemini-pro", // Gemini 1.0 Pro
+  "gemini-1.0-pro": "models/gemini-pro", // Legacy name mapping
+
+  // Embeddings
+  "gemini-embedding-exp": "models/gemini-embedding-exp", // Text embeddings
 };
+
+// Default model to use
+const DEFAULT_MODEL = "gemini-2.5-pro-preview-03-25";
 
 // Message format for Gemini API
 export interface GeminiMessage {
@@ -68,7 +86,7 @@ export async function generateContent(
   const validatedParams = ModelParametersSchema.parse(parameters);
 
   // Get the correct model path
-  const modelPath = GEMINI_MODELS[model as keyof typeof GEMINI_MODELS] || GEMINI_MODELS["gemini-pro"];
+  const modelPath = GEMINI_MODELS[model as keyof typeof GEMINI_MODELS] || GEMINI_MODELS[DEFAULT_MODEL];
 
   // Convert messages to Gemini format
   const geminiMessages = convertToGeminiMessages(messages);
@@ -87,8 +105,8 @@ export async function generateContent(
     } : undefined,
   };
 
-  // Determine the API endpoint (generative or chat)
-  const endpoint = geminiMessages.length > 1 ? 'generateContent' : 'generateContent';
+  // Use the generateContent endpoint
+  const endpoint = 'generateContent';
   
   // Make the API call
   const response = await fetch(
@@ -122,7 +140,7 @@ export async function generateContentStream(
   const validatedParams = ModelParametersSchema.parse(parameters);
 
   // Get the correct model path
-  const modelPath = GEMINI_MODELS[model as keyof typeof GEMINI_MODELS] || GEMINI_MODELS["gemini-pro"];
+  const modelPath = GEMINI_MODELS[model as keyof typeof GEMINI_MODELS] || GEMINI_MODELS[DEFAULT_MODEL];
 
   // Convert messages to Gemini format
   const geminiMessages = convertToGeminiMessages(messages);
@@ -141,8 +159,8 @@ export async function generateContentStream(
     } : undefined,
   };
 
-  // Determine the API endpoint (generative or chat)
-  const endpoint = geminiMessages.length > 1 ? 'streamGenerateContent' : 'streamGenerateContent';
+  // Use the streamGenerateContent endpoint
+  const endpoint = 'streamGenerateContent';
   
   // Make the API call with stream parameter
   const response = await fetch(

@@ -1,21 +1,26 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import {
   initWebSocket,
   sendWebSocketMessage,
   addWebSocketMessageHandler,
   removeWebSocketMessageHandler,
-  isWebSocketConnected
+  isWebSocketConnected,
+  getWebSocket
 } from '@/lib/websocket';
 
 export function useWebSocket() {
   const [isConnected, setIsConnected] = useState(isWebSocketConnected());
+  const socketRef = useRef<WebSocket | null>(null);
   
   // Initialize connection
   useEffect(() => {
     const socket = initWebSocket();
+    socketRef.current = socket;
     
     const onConnectionChange = () => {
       setIsConnected(isWebSocketConnected());
+      // Update the ref if the socket changes
+      socketRef.current = getWebSocket();
     };
     
     // Check connection status periodically
@@ -52,6 +57,7 @@ export function useWebSocket() {
   return {
     isConnected,
     sendMessage,
-    useMessageHandler
+    useMessageHandler,
+    socket: socketRef.current
   };
 }

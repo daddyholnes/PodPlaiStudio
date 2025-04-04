@@ -14,6 +14,11 @@ let isConnected = false;
 type MessageCallback = (event: MessageEvent) => void;
 const messageCallbacks: MessageCallback[] = [];
 
+// Get the current WebSocket instance
+export const getWebSocket = (): WebSocket | null => {
+  return socket;
+};
+
 // Initialize the WebSocket connection
 export const initWebSocket = (): WebSocket => {
   if (!socket || socket.readyState !== WebSocket.OPEN) {
