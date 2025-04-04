@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useTheme } from '@/hooks/use-theme';
-import { useGemini } from '@/hooks/use-gemini';
+import { useGeminiContext } from '@/hooks/use-gemini-context';
 import { useToast } from '@/hooks/use-toast';
 import { useConversations } from '@/hooks/use-conversations';
 import ConversationsList from './conversations-list';
@@ -13,7 +13,7 @@ interface SidebarProps {
 
 export default function Sidebar({ activeTab }: SidebarProps) {
   const { toggleDarkMode, isDarkMode } = useTheme();
-  const { selectedModel, setSelectedModel } = useGemini();
+  const { modelConfig, updateModelConfig } = useGeminiContext();
   const { toast } = useToast();
   const { conversations, createNewConversation, selectedConversationId } = useConversations();
   
@@ -25,7 +25,7 @@ export default function Sidebar({ activeTab }: SidebarProps) {
 
   // Handle creating a new conversation
   const handleNewConversation = () => {
-    createNewConversation(selectedModel);
+    createNewConversation(modelConfig.model);
   };
 
   return (
@@ -44,12 +44,12 @@ export default function Sidebar({ activeTab }: SidebarProps) {
         <div className="relative">
           <select 
             className="w-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-md py-2 px-3 text-sm appearance-none"
-            value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
+            value={modelConfig.model}
+            onChange={(e) => updateModelConfig({ model: e.target.value })}
           >
-            <option value="gemini-pro">Gemini 1.5 Pro</option>
-            <option value="gemini-flash">Gemini 1.5 Flash</option>
-            <option value="gemini-ultra">Gemini Ultra</option>
+            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+            <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+            <option value="gemini-1.0-pro">Gemini 1.0 Pro</option>
           </select>
           <span className="material-icons absolute right-2 top-2 text-neutral-500 pointer-events-none">arrow_drop_down</span>
         </div>
@@ -88,24 +88,15 @@ export default function Sidebar({ activeTab }: SidebarProps) {
         </div>
         
         {/* API Key Status */}
-        {apiStatus && (
-          <div className="text-xs text-neutral-500 mb-3">
-            <div className="flex items-center">
-              <span className="font-medium mr-1">API Status:</span>
-              {apiStatus.apiKeyConfigured ? (
-                <span className="text-green-500 flex items-center">
-                  <span className="material-icons text-xs mr-1">check_circle</span>
-                  Active
-                </span>
-              ) : (
-                <span className="text-error flex items-center">
-                  <span className="material-icons text-xs mr-1">error</span>
-                  Missing API Key
-                </span>
-              )}
-            </div>
+        <div className="text-xs text-neutral-500 mb-3">
+          <div className="flex items-center">
+            <span className="font-medium mr-1">API Status:</span>
+            <span className="text-green-500 flex items-center">
+              <span className="material-icons text-xs mr-1">check_circle</span>
+              Active
+            </span>
           </div>
-        )}
+        </div>
         
         <div className="text-xs text-neutral-500 mt-2">
           <a href="https://ai.google.dev/docs" target="_blank" rel="noopener noreferrer" className="hover:text-primary">Documentation</a> •

@@ -1,17 +1,15 @@
-import { createContext, useState, useEffect, ReactNode } from 'react';
-import { MessagePart, MessageRole, ModelParameters } from '@/../../shared/schema';
-import { useGemini } from '@/hooks/use-gemini';
+import { createContext, ReactNode, useCallback, useState } from 'react';
+import { MessagePart, MessageRole, ModelParameters } from '@shared/schema';
 
-// Define the ModelConfig type
 export interface ModelConfig {
   model: string;
   temperature: number;
   maxOutputTokens: number;
   topK: number;
   topP: number;
+  systemInstructions?: string;
 }
 
-// Define the GeminiContextType
 interface GeminiContextType {
   // Model configuration
   modelConfig: ModelConfig;
@@ -48,181 +46,410 @@ interface GeminiContextType {
   countTokens: (text: string) => Promise<number>;
 }
 
-// Create the Gemini context
+// Default model configuration
+const defaultModelConfig: ModelConfig = {
+  model: 'gemini-1.5-pro',
+  temperature: 0.7,
+  maxOutputTokens: 2048,
+  topK: 40,
+  topP: 0.95,
+};
+
+// Create context with undefined as default
 export const GeminiContext = createContext<GeminiContextType | undefined>(undefined);
 
-// Create the Gemini provider component
+// Provider component
 export function GeminiProvider({ children }: { children: ReactNode }) {
-  // Use the Gemini hook
-  const {
-    generate,
-    generateStream,
-    chat,
-    chatStream,
-    execute,
-    getTokenCount,
-    isLoading,
-    error,
-    clearError
-  } = useGemini();
-  
   // Model configuration state
-  const [modelConfig, setModelConfig] = useState<ModelConfig>({
-    model: 'gemini-1.5-pro',
-    temperature: 0.7,
-    maxOutputTokens: 2048,
-    topK: 40,
-    topP: 0.95
-  });
+  const [modelConfig, setModelConfig] = useState<ModelConfig>(defaultModelConfig);
   
   // Messages state
-  const [messages, setMessages] = useState<{
-    role: MessageRole;
-    content: MessagePart[];
-  }[]>([]);
+  const [messages, setMessages] = useState<{ role: MessageRole; content: MessagePart[] }[]>([]);
   
-  // Generated text state
+  // Generation state
+  const [isGenerating, setIsGenerating] = useState(false);
   const [generatedText, setGeneratedText] = useState('');
+  const [error, setError] = useState<string | null>(null);
   
   // Update model configuration
-  const updateModelConfig = (config: Partial<ModelConfig>) => {
+  const updateModelConfig = useCallback((config: Partial<ModelConfig>) => {
     setModelConfig(prev => ({ ...prev, ...config }));
-  };
+  }, []);
   
-  // Add a message to the conversation
-  const addMessage = (role: MessageRole, content: MessagePart[]) => {
+  // Add a message to the messages array
+  const addMessage = useCallback((role: MessageRole, content: MessagePart[]) => {
     setMessages(prev => [...prev, { role, content }]);
-  };
+  }, []);
   
   // Clear all messages
-  const clearMessages = () => {
+  const clearMessages = useCallback(() => {
     setMessages([]);
-  };
+  }, []);
   
-  // Generate text using the current model configuration
-  const generateText = async (prompt: string | MessagePart[]): Promise<string> => {
-    const params: ModelParameters = {
-      model: modelConfig.model,
-      temperature: modelConfig.temperature,
-      maxOutputTokens: modelConfig.maxOutputTokens,
-      topK: modelConfig.topK,
-      topP: modelConfig.topP
-    };
-    
-    const result = await generate(prompt, params);
-    setGeneratedText(result);
-    return result;
-  };
+  // Clear error
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
   
-  // Generate text stream using the current model configuration
-  const generateTextStream = (
+  // Generate text
+  const generateText = useCallback(async (prompt: string | MessagePart[]): Promise<string> => {
+    try {
+      setIsGenerating(true);
+      setError(null);
+      
+      // Convert string prompt to MessagePart if needed
+      const formattedPrompt = typeof prompt === 'string' 
+        ? [{ type: 'text', text: prompt }] 
+        : prompt;
+      
+      // Set up parameters
+      const params: ModelParameters = {
+        temperature: modelConfig.temperature,
+        maxOutputTokens: modelConfig.maxOutputTokens,
+        topK: modelConfig.topK,
+        topP: modelConfig.topP,
+        stream: false,
+      };
+      
+      if (modelConfig.systemInstructions) {
+        params.systemInstructions = modelConfig.systemInstructions;
+      }
+      
+      // Make API request
+      const response = await fetch('/api/gemini/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: formattedPrompt,
+          model: modelConfig.model,
+          params,
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to generate text');
+      }
+      
+      const data = await response.json();
+      setGeneratedText(data.text);
+      return data.text;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      return '';
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [modelConfig]);
+  
+  // Generate text with streaming
+  const generateTextStream = useCallback((
     prompt: string | MessagePart[],
     onUpdate: (text: string) => void
   ) => {
+    setIsGenerating(true);
+    setError(null);
+    
+    // Convert string prompt to MessagePart if needed
+    const formattedPrompt = typeof prompt === 'string' 
+      ? [{ type: 'text', text: prompt }] 
+      : prompt;
+    
+    // Set up parameters
     const params: ModelParameters = {
-      model: modelConfig.model,
       temperature: modelConfig.temperature,
       maxOutputTokens: modelConfig.maxOutputTokens,
       topK: modelConfig.topK,
-      topP: modelConfig.topP
+      topP: modelConfig.topP,
+      stream: true,
     };
+    
+    if (modelConfig.systemInstructions) {
+      params.systemInstructions = modelConfig.systemInstructions;
+    }
+    
+    // Use EventSource for streaming
+    const eventSource = new EventSource(`/api/gemini/generate-stream?${new URLSearchParams({
+      prompt: JSON.stringify(formattedPrompt),
+      model: modelConfig.model,
+      params: JSON.stringify(params),
+    })}`);
     
     let fullText = '';
     
-    // Create a wrapper for onUpdate that also updates the generatedText state
-    const updateHandler = (text: string) => {
-      fullText = text;
-      setGeneratedText(text);
-      onUpdate(text);
+    const messageHandler = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.error) {
+          setError(data.error);
+          eventSource.close();
+          setIsGenerating(false);
+          return;
+        }
+        
+        fullText += data.text || '';
+        setGeneratedText(fullText);
+        onUpdate(fullText);
+      } catch (err) {
+        setError('Failed to parse streaming response');
+        eventSource.close();
+        setIsGenerating(false);
+      }
     };
     
-    return generateStream(prompt, updateHandler, params);
-  };
-  
-  // Send a chat message using the current model configuration
-  const sendChatMessage = async (content: MessagePart[]): Promise<string> => {
-    const params: ModelParameters = {
-      model: modelConfig.model,
-      temperature: modelConfig.temperature,
-      maxOutputTokens: modelConfig.maxOutputTokens,
-      topK: modelConfig.topK,
-      topP: modelConfig.topP
+    const errorHandler = () => {
+      setError('Stream connection error');
+      eventSource.close();
+      setIsGenerating(false);
     };
     
-    // Add the user message to the conversation
-    addMessage('user', content);
+    const closeHandler = () => {
+      setIsGenerating(false);
+    };
     
-    // Send the chat message to the API
-    const result = await chat([...messages, { role: 'user', content }], params);
+    eventSource.addEventListener('message', messageHandler);
+    eventSource.addEventListener('error', errorHandler);
+    eventSource.addEventListener('close', closeHandler);
     
-    // Add the assistant's response to the conversation
-    addMessage('assistant', [{ type: 'text', text: result }]);
-    
-    return result;
-  };
+    // Return cleanup function
+    return () => {
+      eventSource.removeEventListener('message', messageHandler);
+      eventSource.removeEventListener('error', errorHandler);
+      eventSource.removeEventListener('close', closeHandler);
+      eventSource.close();
+      setIsGenerating(false);
+    };
+  }, [modelConfig]);
   
-  // Send a chat message stream using the current model configuration
-  const sendChatMessageStream = (
+  // Send a chat message
+  const sendChatMessage = useCallback(async (content: MessagePart[]): Promise<string> => {
+    try {
+      setIsGenerating(true);
+      setError(null);
+      
+      // Add the user message to the messages array
+      addMessage('user', content);
+      
+      // Set up parameters
+      const params: ModelParameters = {
+        temperature: modelConfig.temperature,
+        maxOutputTokens: modelConfig.maxOutputTokens,
+        topK: modelConfig.topK,
+        topP: modelConfig.topP,
+        stream: false,
+      };
+      
+      if (modelConfig.systemInstructions) {
+        params.systemInstructions = modelConfig.systemInstructions;
+      }
+      
+      // Make API request
+      const response = await fetch('/api/gemini/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [...messages, { role: 'user' as MessageRole, content }],
+          model: modelConfig.model,
+          params,
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to send chat message');
+      }
+      
+      const data = await response.json();
+      setGeneratedText(data.text);
+      
+      // Add the assistant response to the messages array
+      addMessage('assistant', [{ type: 'text', text: data.text }]);
+      
+      return data.text;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      return '';
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [addMessage, messages, modelConfig]);
+  
+  // Send a chat message with streaming
+  const sendChatMessageStream = useCallback((
     content: MessagePart[],
     onUpdate: (text: string) => void
   ) => {
+    setIsGenerating(true);
+    setError(null);
+    
+    // Add the user message to the messages array
+    addMessage('user', content);
+    
+    // Set up parameters
     const params: ModelParameters = {
-      model: modelConfig.model,
       temperature: modelConfig.temperature,
       maxOutputTokens: modelConfig.maxOutputTokens,
       topK: modelConfig.topK,
-      topP: modelConfig.topP
+      topP: modelConfig.topP,
+      stream: true,
     };
     
-    // Add the user message to the conversation
-    addMessage('user', content);
+    if (modelConfig.systemInstructions) {
+      params.systemInstructions = modelConfig.systemInstructions;
+    }
     
-    let assistantResponse = '';
+    // Include the new user message in the messages array
+    const allMessages = [...messages, { role: 'user' as MessageRole, content }];
     
-    // Create a wrapper for onUpdate that also saves the final response
-    const updateHandler = (text: string) => {
-      assistantResponse = text;
-      onUpdate(text);
-    };
+    // Use EventSource for streaming
+    const eventSource = new EventSource(`/api/gemini/chat-stream?${new URLSearchParams({
+      messages: JSON.stringify(allMessages),
+      model: modelConfig.model,
+      params: JSON.stringify(params),
+    })}`);
     
-    // Send the chat message stream
-    const cancelStream = chatStream(
-      [...messages, { role: 'user', content }], 
-      updateHandler,
-      params
-    );
+    let fullText = '';
     
-    // Return a function that will clean up the stream and add the assistant's response
-    return () => {
-      cancelStream();
-      
-      // Only add the assistant's response if there is text
-      if (assistantResponse) {
-        addMessage('assistant', [{ type: 'text', text: assistantResponse }]);
+    const messageHandler = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.error) {
+          setError(data.error);
+          eventSource.close();
+          setIsGenerating(false);
+          return;
+        }
+        
+        fullText += data.text || '';
+        setGeneratedText(fullText);
+        onUpdate(fullText);
+      } catch (err) {
+        setError('Failed to parse streaming response');
+        eventSource.close();
+        setIsGenerating(false);
       }
     };
+    
+    const errorHandler = () => {
+      setError('Stream connection error');
+      eventSource.close();
+      setIsGenerating(false);
+    };
+    
+    const closeHandler = () => {
+      setIsGenerating(false);
+      // Add the assistant response to the messages array when done
+      if (fullText) {
+        addMessage('assistant', [{ type: 'text', text: fullText }]);
+      }
+    };
+    
+    eventSource.addEventListener('message', messageHandler);
+    eventSource.addEventListener('error', errorHandler);
+    eventSource.addEventListener('close', closeHandler);
+    
+    // Return cleanup function
+    return () => {
+      eventSource.removeEventListener('message', messageHandler);
+      eventSource.removeEventListener('error', errorHandler);
+      eventSource.removeEventListener('close', closeHandler);
+      eventSource.close();
+      setIsGenerating(false);
+      // Add the assistant response to the messages array when canceled
+      if (fullText) {
+        addMessage('assistant', [{ type: 'text', text: fullText }]);
+      }
+    };
+  }, [addMessage, messages, modelConfig]);
+  
+  // Execute code
+  const executeCode = useCallback(async (code: string, language = 'javascript'): Promise<{ output: string; error?: string }> => {
+    try {
+      setIsGenerating(true);
+      setError(null);
+      
+      // Make API request
+      const response = await fetch('/api/gemini/code/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code,
+          language,
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to execute code');
+      }
+      
+      return await response.json();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      return { output: '', error: err instanceof Error ? err.message : 'An error occurred' };
+    } finally {
+      setIsGenerating(false);
+    }
+  }, []);
+  
+  // Count tokens
+  const countTokens = useCallback(async (text: string): Promise<number> => {
+    try {
+      setError(null);
+      
+      // Make API request
+      const response = await fetch('/api/gemini/tokens/count', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text,
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to count tokens');
+      }
+      
+      const data = await response.json();
+      return data.count;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      return 0;
+    }
+  }, []);
+  
+  // Provide context value
+  const contextValue: GeminiContextType = {
+    modelConfig,
+    updateModelConfig,
+    messages,
+    addMessage,
+    clearMessages,
+    isGenerating,
+    generatedText,
+    error,
+    clearError,
+    generateText,
+    generateTextStream,
+    sendChatMessage,
+    sendChatMessageStream,
+    executeCode,
+    countTokens,
   };
   
   return (
-    <GeminiContext.Provider
-      value={{
-        modelConfig,
-        updateModelConfig,
-        messages,
-        addMessage,
-        clearMessages,
-        isGenerating: isLoading,
-        generatedText,
-        error,
-        clearError,
-        generateText,
-        generateTextStream,
-        sendChatMessage,
-        sendChatMessageStream,
-        executeCode: execute,
-        countTokens: getTokenCount
-      }}
-    >
+    <GeminiContext.Provider value={contextValue}>
       {children}
     </GeminiContext.Provider>
   );

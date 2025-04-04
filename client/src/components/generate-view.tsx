@@ -6,7 +6,7 @@ import MessageInput from './message-input';
 import CodeBlock from './ui/code-block';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { useWebSocket } from '@/lib/websocket';
+import { useWebSocket } from '@/hooks/use-websocket';
 
 export default function GenerateView() {
   const { selectedModel, parameters, sendMessageToGemini } = useGemini();

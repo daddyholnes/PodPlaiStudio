@@ -1,16 +1,19 @@
 import { useQuery } from '@tanstack/react-query';
-import { useConversations } from '@/hooks/use-conversations';
+import { useConversations, Conversation } from '@/hooks/use-conversations';
 
 export default function ConversationsList() {
   const { 
     conversations, 
-    loading, 
+    isLoading, 
     selectedConversationId, 
-    selectConversation, 
+    setSelectedConversationId, 
     deleteConversation 
   } = useConversations();
+  
+  // Cast conversations to the Conversation[] type
+  const typedConversations = conversations as Conversation[];
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex-grow p-4 flex flex-col items-center justify-center">
         <div className="animate-pulse flex space-x-2">
@@ -22,7 +25,7 @@ export default function ConversationsList() {
     );
   }
 
-  if (conversations.length === 0) {
+  if (typedConversations.length === 0) {
     return (
       <div className="flex-grow p-4 flex flex-col items-center justify-center">
         <p className="text-sm text-neutral-500 text-center">
@@ -34,7 +37,7 @@ export default function ConversationsList() {
 
   return (
     <div className="flex-grow overflow-y-auto">
-      {conversations.map((conversation) => {
+      {typedConversations.map((conversation: Conversation) => {
         const isSelected = conversation.id === selectedConversationId;
         const icon = conversation.title.toLowerCase().includes('code') ? 'code' : 
                     conversation.title.toLowerCase().includes('generate') ? 'text_fields' : 'chat';
@@ -45,7 +48,7 @@ export default function ConversationsList() {
             className={`px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer flex items-center justify-between group ${
               isSelected ? 'bg-neutral-200 dark:bg-neutral-800' : ''
             }`}
-            onClick={() => selectConversation(conversation.id)}
+            onClick={() => setSelectedConversationId(conversation.id)}
           >
             <div className="flex items-center overflow-hidden">
               <span className="material-icons text-neutral-500 mr-2 text-base">{icon}</span>

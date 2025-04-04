@@ -1,220 +1,72 @@
-import { useState, useCallback, useContext } from 'react';
-import { useWebSocket } from './use-websocket';
-import { 
-  generateText, 
-  generateTextStream, 
-  chatWithGemini, 
-  chatWithGeminiStream,
-  executeCode,
-  countTokens
-} from '@/lib/gemini-api';
+import { useContext } from 'react';
+import { useGeminiContext } from '@/hooks/use-gemini-context';
+import { useWebSocket } from '@/hooks/use-websocket';
 import { MessagePart, MessageRole, ModelParameters } from '@/../../shared/schema';
 import { ThemeContext } from '@/contexts/theme-context';
 
 export function useGemini() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { useMessageHandler, sendMessage } = useWebSocket();
+  const geminiContext = useGeminiContext();
   const { isDarkMode } = useContext(ThemeContext) || { isDarkMode: false };
+  const { sendMessage } = useWebSocket();
   
-  // Generate text with Gemini
-  const generate = useCallback(async (
-    prompt: string | MessagePart[],
-    modelParams?: ModelParameters
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const result = await generateText(prompt, modelParams);
-      setIsLoading(false);
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      setError(errorMessage);
-      setIsLoading(false);
-      return '';
-    }
-  }, []);
-  
-  // Generate text with streaming via WebSocket
-  const generateStream = useCallback((
-    prompt: string | MessagePart[],
-    onUpdate: (text: string) => void,
-    modelParams?: ModelParameters
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    
-    const requestId = generateTextStream(prompt, modelParams);
-    
-    // Send the generation request through WebSocket
-    sendMessage({
-      type: 'generate',
-      id: requestId,
-      prompt: typeof prompt === 'string' 
-        ? [{ type: 'text', text: prompt }] 
-        : prompt,
-      modelParams,
-      theme: isDarkMode ? 'dark' : 'light'
-    });
-    
-    // Set up a message handler for this request
-    const messageHandler = (event: MessageEvent) => {
-      try {
-        const data = JSON.parse(event.data);
-        
-        // Check if this message is for our request
-        if (data.id === requestId) {
-          if (data.type === 'update') {
-            onUpdate(data.text);
-          } else if (data.type === 'complete') {
-            setIsLoading(false);
-          } else if (data.type === 'error') {
-            setError(data.error);
-            setIsLoading(false);
-          }
-        }
-      } catch (err) {
-        console.error('Error parsing WebSocket message:', err);
-      }
-    };
-    
-    // Use the message handler from useWebSocket hook
-    useMessageHandler(messageHandler);
-    
-    // Return a function to cancel the generation
-    return () => {
-      sendMessage({
-        type: 'cancel',
-        id: requestId
-      });
-      setIsLoading(false);
-    };
-  }, [sendMessage, useMessageHandler, isDarkMode]);
-  
-  // Chat with Gemini
-  const chat = useCallback(async (
-    messages: {
-      role: MessageRole;
-      content: MessagePart[];
-    }[],
-    modelParams?: ModelParameters
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const result = await chatWithGemini(messages, modelParams);
-      setIsLoading(false);
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      setError(errorMessage);
-      setIsLoading(false);
-      return '';
-    }
-  }, []);
-  
-  // Chat with streaming via WebSocket
-  const chatStream = useCallback((
-    messages: {
-      role: MessageRole;
-      content: MessagePart[];
-    }[],
-    onUpdate: (text: string) => void,
-    modelParams?: ModelParameters
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    
-    const requestId = chatWithGeminiStream(messages, modelParams);
-    
-    // Send the chat request through WebSocket
-    sendMessage({
-      type: 'chat',
-      id: requestId,
-      messages,
-      modelParams,
-      theme: isDarkMode ? 'dark' : 'light'
-    });
-    
-    // Set up a message handler for this request
-    const messageHandler = (event: MessageEvent) => {
-      try {
-        const data = JSON.parse(event.data);
-        
-        // Check if this message is for our request
-        if (data.id === requestId) {
-          if (data.type === 'update') {
-            onUpdate(data.text);
-          } else if (data.type === 'complete') {
-            setIsLoading(false);
-          } else if (data.type === 'error') {
-            setError(data.error);
-            setIsLoading(false);
-          }
-        }
-      } catch (err) {
-        console.error('Error parsing WebSocket message:', err);
-      }
-    };
-    
-    // Use the message handler from useWebSocket hook
-    useMessageHandler(messageHandler);
-    
-    // Return a function to cancel the generation
-    return () => {
-      sendMessage({
-        type: 'cancel',
-        id: requestId
-      });
-      setIsLoading(false);
-    };
-  }, [sendMessage, useMessageHandler, isDarkMode]);
-  
-  // Execute code with Gemini
-  const execute = useCallback(async (
-    code: string,
-    language?: string
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const result = await executeCode(code, language);
-      setIsLoading(false);
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      setError(errorMessage);
-      setIsLoading(false);
-      return { output: '', error: errorMessage };
-    }
-  }, []);
-  
-  // Count tokens
-  const getTokenCount = useCallback(async (
-    text: string
-  ) => {
-    try {
-      return await countTokens(text);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error('Error counting tokens:', errorMessage);
-      return 0;
-    }
-  }, []);
-  
-  return {
-    generate,
-    generateStream,
-    chat,
-    chatStream,
-    execute,
-    getTokenCount,
-    isLoading,
+  // Extract what we need from the context
+  const { 
+    modelConfig,
+    updateModelConfig,
+    isGenerating,
     error,
-    clearError: () => setError(null)
+    clearError,
+    generateText,
+    generateTextStream,
+    sendChatMessage,
+    sendChatMessageStream
+  } = geminiContext;
+  
+  // Map to expected API properties
+  return {
+    // Model configuration
+    selectedModel: modelConfig.model,
+    parameters: {
+      temperature: modelConfig.temperature,
+      maxOutputTokens: modelConfig.maxOutputTokens,
+      topK: modelConfig.topK,
+      topP: modelConfig.topP,
+      systemInstructions: modelConfig.systemInstructions,
+      stream: true
+    },
+    
+    // Message sending functions
+    sendMessageToGemini: async (
+      model: string,
+      messages: { role: MessageRole; content: MessagePart[] }[],
+      params?: Partial<ModelParameters>
+    ) => {
+      // Update model config if different
+      if (model !== modelConfig.model) {
+        updateModelConfig({ model });
+      }
+      
+      // Extract the last user message
+      const lastMessage = messages[messages.length - 1];
+      
+      // Send the message
+      const result = await sendChatMessage(lastMessage.content);
+      return { 
+        candidates: [{ 
+          content: { 
+            parts: [{ text: result }] 
+          } 
+        }] 
+      };
+    },
+    
+    // Old API functions for compatibility
+    generate: generateText,
+    generateStream: generateTextStream,
+    
+    // State
+    isLoading: isGenerating,
+    error,
+    clearError
   };
 }

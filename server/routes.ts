@@ -5,9 +5,11 @@ import { storage } from "./storage";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { generateContent, generateContentStream } from "./gemini";
+import { generateContent, generateContentStream, countTokens } from "./gemini";
 import { 
   MessageRoleEnum, 
+  MessageRole,
+  MessagePartTypeEnum,
   ModelParametersSchema, 
   insertConversationSchema, 
   insertMessageSchema
@@ -293,7 +295,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Generate content (non-streaming)
-  app.post('/api/generate', async (req, res) => {
+  app.post('/api/gemini/generate', async (req, res) => {
+    try {
+      // Validate request body using Zod
+      const schema = z.object({
+        model: z.string(),
+        prompt: z.array(z.object({
+          type: z.string(),
+          text: z.string().optional(),
+          mimeType: z.string().optional(),
+          fileData: z.string().optional(),
+        })),
+        params: ModelParametersSchema
+      });
+      
+      const { model, prompt, params } = schema.parse(req.body);
+      
+      // Format as a single user message
+      const messages = [{ role: 'user' as MessageRole, content: prompt }];
+      
+      // Generate content using Gemini API
+      const response = await generateContent(model, messages, params);
+      
+      // Extract the text from the response
+      const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      
+      res.json({ text });
+    } catch (error) {
+      console.error('Error generating content:', error);
+      res.status(400).json({ 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Generate content with streaming
+  app.get('/api/gemini/generate-stream', async (req, res) => {
+    try {
+      // Get query parameters
+      const { prompt: promptJson, model, params: paramsJson } = req.query;
+      
+      if (!promptJson || !model || !paramsJson) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+      
+      // Parse the JSON strings
+      const prompt = JSON.parse(promptJson as string);
+      const params = JSON.parse(paramsJson as string);
+      
+      // Format as a single user message
+      const messages = [{ role: 'user' as MessageRole, content: prompt }];
+      
+      // Set up SSE headers
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      
+      // Generate streaming content
+      const streamResponse = await generateContentStream(model as string, messages, params);
+      
+      // Pipe the stream to the response
+      streamResponse.body?.pipe(res);
+      
+      // Handle client disconnect
+      req.on('close', () => {
+        res.end();
+      });
+    } catch (error) {
+      console.error('Error generating streaming content:', error);
+      res.write(`data: ${JSON.stringify({ error: error instanceof Error ? error.message : String(error) })}\n\n`);
+      res.end();
+    }
+  });
+  
+  // Chat message (non-streaming)
+  app.post('/api/gemini/chat', async (req, res) => {
     try {
       // Validate request body using Zod
       const schema = z.object({
@@ -302,17 +378,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
           role: MessageRoleEnum,
           content: z.array(z.any())
         })),
-        parameters: z.object({}).passthrough()
+        params: ModelParametersSchema
       });
       
-      const { model, messages, parameters } = schema.parse(req.body);
+      const { model, messages, params } = schema.parse(req.body);
       
       // Generate content using Gemini API
-      const response = await generateContent(model, messages, parameters);
+      const response = await generateContent(model, messages, params);
       
-      res.json(response);
+      // Extract the text from the response
+      const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      
+      res.json({ text });
     } catch (error) {
-      console.error('Error generating content:', error);
+      console.error('Error generating chat response:', error);
+      res.status(400).json({ 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Chat message with streaming
+  app.get('/api/gemini/chat-stream', async (req, res) => {
+    try {
+      // Get query parameters
+      const { messages: messagesJson, model, params: paramsJson } = req.query;
+      
+      if (!messagesJson || !model || !paramsJson) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+      
+      // Parse the JSON strings
+      const messages = JSON.parse(messagesJson as string);
+      const params = JSON.parse(paramsJson as string);
+      
+      // Set up SSE headers
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      
+      // Generate streaming content
+      const streamResponse = await generateContentStream(model as string, messages, params);
+      
+      // Pipe the stream to the response
+      streamResponse.body?.pipe(res);
+      
+      // Handle client disconnect
+      req.on('close', () => {
+        res.end();
+      });
+    } catch (error) {
+      console.error('Error generating streaming chat response:', error);
+      res.write(`data: ${JSON.stringify({ error: error instanceof Error ? error.message : String(error) })}\n\n`);
+      res.end();
+    }
+  });
+  
+  // Token counting
+  app.post('/api/gemini/tokens/count', async (req, res) => {
+    try {
+      // Validate request body using Zod
+      const schema = z.object({
+        text: z.string()
+      });
+      
+      const { text } = schema.parse(req.body);
+      
+      // Use the countTokens function from gemini.ts
+      const count = countTokens(text);
+      
+      res.json({ count });
+    } catch (error) {
+      console.error('Error counting tokens:', error);
+      res.status(400).json({ 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Code execution endpoint
+  app.post('/api/gemini/code/execute', async (req, res) => {
+    try {
+      // Validate request body using Zod
+      const schema = z.object({
+        code: z.string(),
+        language: z.string().default('javascript')
+      });
+      
+      const { code, language } = schema.parse(req.body);
+      
+      // For security, we'll do a simple code execution simulation
+      // DO NOT RUN ARBITRARY CODE IN PRODUCTION!
+      let output = '';
+      let error;
+      
+      try {
+        // For demo purposes only - NEVER do this in production
+        if (language === 'javascript') {
+          // Simulate code execution
+          output = `[Simulated JavaScript execution]\n\nCode analysis:\n- Language: JavaScript\n- Length: ${code.length} characters\n- Contains ${code.split('\n').length} lines\n\nOutput would be shown here in a real execution environment.`;
+        } else {
+          output = `[Simulated ${language} execution]\n\nSimulated output for ${language}.\nOnly JavaScript is executed in this demo.`;
+        }
+      } catch (err) {
+        error = err instanceof Error ? err.message : String(err);
+      }
+      
+      res.json({ output, error });
+    } catch (error) {
+      console.error('Error executing code:', error);
       res.status(400).json({ 
         error: error instanceof Error ? error.message : String(error) 
       });
