@@ -1,0 +1,353 @@
+import type { Express, Request, Response } from "express";
+import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
+import { storage } from "./storage";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { generateContent, generateContentStream } from "./gemini";
+import { 
+  MessageRoleEnum, 
+  ModelParametersSchema, 
+  insertConversationSchema, 
+  insertMessageSchema
+} from "@shared/schema";
+import { z } from "zod";
+
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, uploadsDir);
+    },
+    filename: function (req, file, cb) {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+  }),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  }
+});
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Create HTTP server
+  const httpServer = createServer(app);
+  
+  // Create WebSocket server
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Handle WebSocket connections
+  wss.on('connection', (ws) => {
+    console.log('Client connected to WebSocket');
+    
+    ws.on('message', async (message) => {
+      try {
+        // Parse the message
+        const data = JSON.parse(message.toString());
+        
+        // Handle different message types
+        if (data.type === "generate" && data.stream) {
+          // Handle streaming generation
+          const { model, messages, parameters, conversationId } = data;
+          
+          // Start the streaming response
+          try {
+            const streamResponse = await generateContentStream(model, messages, parameters);
+            
+            // Setup reading the stream
+            const reader = streamResponse.body?.getReader();
+            if (!reader) {
+              ws.send(JSON.stringify({ 
+                type: "error", 
+                error: "Failed to get stream reader" 
+              }));
+              return;
+            }
+            
+            // Process the stream chunks
+            const decoder = new TextDecoder();
+            let buffer = "";
+            
+            const processStream = async () => {
+              try {
+                const { done, value } = await reader.read();
+                
+                if (done) {
+                  ws.send(JSON.stringify({ type: "done" }));
+                  return;
+                }
+                
+                // Decode and process the chunk
+                buffer += decoder.decode(value, { stream: true });
+                
+                // Split by newlines to get SSE events
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || "";
+                
+                for (const line of lines) {
+                  if (line.startsWith('data:')) {
+                    const data = line.slice(5).trim();
+                    if (data === '[DONE]') {
+                      ws.send(JSON.stringify({ type: "done" }));
+                      return;
+                    }
+                    
+                    try {
+                      const parsedData = JSON.parse(data);
+                      
+                      // Extract the content and send it
+                      if (parsedData.candidates && parsedData.candidates[0]?.content) {
+                        ws.send(JSON.stringify({ 
+                          type: "chunk", 
+                          content: parsedData.candidates[0].content,
+                          conversationId
+                        }));
+                      }
+                    } catch (e) {
+                      console.error('Error parsing JSON from stream:', e);
+                    }
+                  }
+                }
+                
+                // Continue processing the stream
+                processStream();
+              } catch (error) {
+                console.error('Error processing stream:', error);
+                ws.send(JSON.stringify({ 
+                  type: "error", 
+                  error: error instanceof Error ? error.message : String(error) 
+                }));
+              }
+            };
+            
+            processStream();
+          } catch (error) {
+            console.error('Error generating content stream:', error);
+            ws.send(JSON.stringify({ 
+              type: "error", 
+              error: error instanceof Error ? error.message : String(error) 
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Error processing WebSocket message:', error);
+        ws.send(JSON.stringify({ 
+          type: "error", 
+          error: error instanceof Error ? error.message : String(error) 
+        }));
+      }
+    });
+    
+    ws.on('close', () => {
+      console.log('Client disconnected from WebSocket');
+    });
+  });
+  
+  // API Routes
+  
+  // Get API status and check if API key is configured
+  app.get('/api/status', (req, res) => {
+    const apiKeyConfigured = !!process.env.GEMINI_API_KEY;
+    res.json({ 
+      status: 'ok', 
+      apiKeyConfigured,
+      apiKeyMasked: apiKeyConfigured ? 
+        `GEMINI_${'*'.repeat(process.env.GEMINI_API_KEY!.length - 7)}` : 
+        undefined
+    });
+  });
+  
+  // Conversations
+  app.get('/api/conversations', async (req, res) => {
+    try {
+      const conversations = await storage.getConversations();
+      res.json(conversations);
+    } catch (error) {
+      console.error('Error getting conversations:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  app.post('/api/conversations', async (req, res) => {
+    try {
+      const validatedData = insertConversationSchema.parse(req.body);
+      const conversation = await storage.createConversation(validatedData);
+      res.status(201).json(conversation);
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      res.status(400).json({ 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  app.get('/api/conversations/:id', async (req, res) => {
+    try {
+      const conversationId = parseInt(req.params.id);
+      const conversation = await storage.getConversation(conversationId);
+      
+      if (!conversation) {
+        return res.status(404).json({ error: 'Conversation not found' });
+      }
+      
+      res.json(conversation);
+    } catch (error) {
+      console.error('Error getting conversation:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  app.patch('/api/conversations/:id', async (req, res) => {
+    try {
+      const conversationId = parseInt(req.params.id);
+      const { title } = req.body;
+      
+      if (typeof title !== 'string') {
+        return res.status(400).json({ error: 'Title must be a string' });
+      }
+      
+      const conversation = await storage.updateConversation(conversationId, title);
+      
+      if (!conversation) {
+        return res.status(404).json({ error: 'Conversation not found' });
+      }
+      
+      res.json(conversation);
+    } catch (error) {
+      console.error('Error updating conversation:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  app.delete('/api/conversations/:id', async (req, res) => {
+    try {
+      const conversationId = parseInt(req.params.id);
+      const success = await storage.deleteConversation(conversationId);
+      
+      if (!success) {
+        return res.status(404).json({ error: 'Conversation not found' });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Messages
+  app.get('/api/conversations/:id/messages', async (req, res) => {
+    try {
+      const conversationId = parseInt(req.params.id);
+      const messages = await storage.getMessages(conversationId);
+      res.json(messages);
+    } catch (error) {
+      console.error('Error getting messages:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  app.post('/api/conversations/:id/messages', async (req, res) => {
+    try {
+      const conversationId = parseInt(req.params.id);
+      
+      // Validate the conversation exists
+      const conversation = await storage.getConversation(conversationId);
+      if (!conversation) {
+        return res.status(404).json({ error: 'Conversation not found' });
+      }
+      
+      // Validate the message data
+      const messageData = {
+        ...req.body,
+        conversationId
+      };
+      
+      const validatedData = insertMessageSchema.parse(messageData);
+      const message = await storage.createMessage(validatedData);
+      
+      res.status(201).json(message);
+    } catch (error) {
+      console.error('Error creating message:', error);
+      res.status(400).json({ 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Generate content (non-streaming)
+  app.post('/api/generate', async (req, res) => {
+    try {
+      // Validate request body using Zod
+      const schema = z.object({
+        model: z.string(),
+        messages: z.array(z.object({
+          role: MessageRoleEnum,
+          content: z.array(z.any())
+        })),
+        parameters: z.object({}).passthrough()
+      });
+      
+      const { model, messages, parameters } = schema.parse(req.body);
+      
+      // Generate content using Gemini API
+      const response = await generateContent(model, messages, parameters);
+      
+      res.json(response);
+    } catch (error) {
+      console.error('Error generating content:', error);
+      res.status(400).json({ 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // File upload
+  app.post('/api/upload', upload.single('file'), (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+      
+      // Read the file as base64
+      const filePath = req.file.path;
+      const fileData = fs.readFileSync(filePath);
+      const base64Data = fileData.toString('base64');
+      
+      // Return file information
+      res.json({
+        filename: req.file.originalname,
+        mimeType: req.file.mimetype,
+        size: req.file.size,
+        fileData: `data:${req.file.mimetype};base64,${base64Data}`
+      });
+      
+      // Clean up the file
+      fs.unlinkSync(filePath);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  return httpServer;
+}
