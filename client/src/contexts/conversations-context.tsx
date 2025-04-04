@@ -1,102 +1,150 @@
-import { createContext, ReactNode, useState, useCallback } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { queryClient, apiRequest } from '@/lib/queryClient';
-import { Conversation } from '@/hooks/use-conversations';
+import React, { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '../lib/queryClient';
+import { Conversation } from '@shared/schema';
+import { useWebSocket } from '../hooks/use-websocket';
+import { WebSocketMessageType } from '../lib/websocket';
 
-interface ConversationsContextType {
+// Define interface for the hook return value
+export interface UseConversationsReturn {
   conversations: Conversation[];
-  selectedConversationId: number | null;
-  setSelectedConversationId: (id: number | null) => void;
+  selectedConversation: Conversation | null;
   isLoading: boolean;
-  isError: boolean;
-  createNewConversation: (model: string, title?: string) => Promise<any>;
-  isCreating: boolean;
-  updateConversation: (data: { id: number; title: string }) => void;
-  isUpdating: boolean;
-  deleteConversation: (id: number) => void;
-  isDeleting: boolean;
+  error: Error | null;
+  createConversation: (title: string) => Promise<Conversation>;
+  selectConversation: (id: number) => void;
+  updateConversation: (id: number, title: string) => Promise<Conversation | undefined>;
+  deleteConversation: (id: number) => Promise<boolean>;
 }
 
-export const ConversationsContext = createContext<ConversationsContextType | undefined>(undefined);
+// Create context with a default value
+const ConversationsContext = createContext<UseConversationsReturn | null>(null);
 
+// Create a provider component
 export function ConversationsProvider({ children }: { children: ReactNode }) {
-  const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
+  const queryClient = useQueryClient();
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   
-  // Get all conversations
-  const { data: conversations = [], isLoading, isError } = useQuery({
+  // Set up WebSocket for real-time conversation updates
+  const { status, sendMessage } = useWebSocket({
+    onMessage: (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === WebSocketMessageType.CONVERSATIONS) {
+          // Update the conversations cache with the latest conversations
+          queryClient.setQueryData(['/api/conversations'], data.conversations);
+        } else if (data.type === WebSocketMessageType.NEW_CONVERSATION) {
+          // Invalidate the conversations query to trigger a refetch
+          queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+          
+          // If a new conversation is created, select it
+          if (data.conversation) {
+            setSelectedConversation(data.conversation);
+          }
+        } else if (data.type === WebSocketMessageType.DELETE_CONVERSATION) {
+          // Invalidate the conversations query to trigger a refetch
+          queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+          
+          // If the deleted conversation is the selected one, deselect it
+          if (selectedConversation && selectedConversation.id === data.conversationId) {
+            setSelectedConversation(null);
+          }
+        } else if (data.type === WebSocketMessageType.UPDATE_CONVERSATION) {
+          // Invalidate the conversations query to trigger a refetch
+          queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+          
+          // If the updated conversation is the selected one, update it
+          if (selectedConversation && selectedConversation.id === data.conversation.id) {
+            setSelectedConversation(data.conversation);
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
+    }
+  });
+  
+  // Fetch conversations
+  const { data, isLoading, error } = useQuery<Conversation[], Error>({
     queryKey: ['/api/conversations'],
     staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes
+    refetchOnWindowFocus: true,
   });
-
+  
   // Create a new conversation
-  const createConversationMutation = useMutation({
-    mutationFn: async ({ model, title }: { model: string; title?: string }) => {
-      // Generate a default title with timestamp if not provided
-      let conversationTitle = title;
-      if (!conversationTitle) {
-        const now = new Date();
-        conversationTitle = `New conversation (${now.toLocaleTimeString()})`;
-      }
-      const response = await apiRequest('POST', '/api/conversations', { 
-        title: conversationTitle, 
-        model 
-      });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
-      // Select the newly created conversation
-      setSelectedConversationId(data.id);
-    },
-  });
-
-  // Helper function to match the expected signature in components
-  const createNewConversation = useCallback(async (model: string, title?: string) => {
-    return createConversationMutation.mutateAsync({ model, title });
-  }, [createConversationMutation]);
-
-  // Update a conversation title
-  const updateConversationMutation = useMutation({
-    mutationFn: async ({ id, title }: { id: number; title: string }) => {
-      const response = await apiRequest('PATCH', `/api/conversations/${id}`, { title });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
-    },
-  });
-
+  const createConversation = useCallback(async (title: string): Promise<Conversation> => {
+    const newConversation = await apiRequest('/api/conversations', 'POST', { title }) as Conversation;
+    queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+    setSelectedConversation(newConversation);
+    return newConversation;
+  }, [queryClient]);
+  
+  // Select a conversation
+  const selectConversation = useCallback((id: number) => {
+    const conversation = data?.find(c => c.id === id) || null;
+    setSelectedConversation(conversation);
+  }, [data]);
+  
+  // Update a conversation
+  const updateConversation = useCallback(async (id: number, title: string): Promise<Conversation | undefined> => {
+    const updatedConversation = await apiRequest(`/api/conversations/${id}`, 'PATCH', { title }) as Conversation;
+    queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+    
+    // If the updated conversation is the selected one, update it
+    if (selectedConversation && selectedConversation.id === id) {
+      setSelectedConversation(updatedConversation);
+    }
+    
+    return updatedConversation;
+  }, [queryClient, selectedConversation]);
+  
   // Delete a conversation
-  const deleteConversationMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await apiRequest('DELETE', `/api/conversations/${id}`);
-      if (selectedConversationId === id) {
-        setSelectedConversationId(null);
-      }
-      return id;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
-    },
-  });
-
-  const value = {
-    conversations: conversations as Conversation[],
-    selectedConversationId,
-    setSelectedConversationId,
+  const deleteConversation = useCallback(async (id: number): Promise<boolean> => {
+    const success = await apiRequest(`/api/conversations/${id}`, 'DELETE') as boolean;
+    queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+    
+    // If the deleted conversation is the selected one, deselect it
+    if (selectedConversation && selectedConversation.id === id) {
+      setSelectedConversation(null);
+    }
+    
+    return success;
+  }, [queryClient, selectedConversation]);
+  
+  // Effect to select the first conversation if there is no selected conversation
+  useEffect(() => {
+    if (!selectedConversation && data && data.length > 0) {
+      setSelectedConversation(data[0]);
+    }
+  }, [data, selectedConversation]);
+  
+  const contextValue = {
+    conversations: data || [],
+    selectedConversation,
     isLoading,
-    isError,
-    createNewConversation,
-    isCreating: createConversationMutation.isPending,
-    updateConversation: updateConversationMutation.mutate,
-    isUpdating: updateConversationMutation.isPending,
-    deleteConversation: deleteConversationMutation.mutate,
-    isDeleting: deleteConversationMutation.isPending,
+    error,
+    createConversation,
+    selectConversation,
+    updateConversation,
+    deleteConversation
   };
-
+  
   return (
-    <ConversationsContext.Provider value={value}>
+    <ConversationsContext.Provider value={contextValue}>
       {children}
     </ConversationsContext.Provider>
   );
+}
+
+// Create a hook to use the context
+export function useConversationsContext(): UseConversationsReturn {
+  const context = useContext(ConversationsContext);
+  
+  if (!context) {
+    throw new Error('useConversationsContext must be used within a ConversationsProvider');
+  }
+  
+  return context;
 }

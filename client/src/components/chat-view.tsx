@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { useGemini } from '@/hooks/use-gemini';
+import { useGeminiContext } from '@/hooks/use-gemini-context';
 import { useConversations } from '@/hooks/use-conversations';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import MessageInput from './message-input';
@@ -8,35 +8,47 @@ import CodeBlock from './ui/code-block';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useWebSocket } from '@/hooks/use-websocket';
+import { ModelParameters } from '@shared/schema';
 
 export default function ChatView() {
-  const { selectedModel, parameters, sendMessageToGemini } = useGemini();
+  const { modelConfig } = useGeminiContext();
   const { 
-    selectedConversationId,
-    createNewConversation
+    selectedConversation,
+    createConversation
   } = useConversations();
   const [isGenerating, setIsGenerating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const { socket, isConnected } = useWebSocket();
+  const websocket = useWebSocket();
+  
+  // Extract selected model and parameters from modelConfig
+  const selectedModel = modelConfig.model;
+  const parameters: ModelParameters = {
+    temperature: modelConfig.temperature,
+    maxOutputTokens: modelConfig.maxOutputTokens,
+    topP: modelConfig.topP,
+    topK: modelConfig.topK,
+    stream: true,
+    systemInstructions: modelConfig.systemInstructions || undefined
+  };
   
   // Query for messages in the current conversation
   const { 
     data: messages = [], 
     isLoading 
   } = useQuery({
-    queryKey: [`/api/conversations/${selectedConversationId}/messages`],
-    enabled: !!selectedConversationId,
+    queryKey: ['/api/conversations', selectedConversation?.id, 'messages'],
+    enabled: !!selectedConversation?.id,
   });
   
   // Mutation for adding a new message
   const addMessageMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('POST', `/api/conversations/${selectedConversationId}/messages`, data);
+      return apiRequest('/api/conversations/' + (selectedConversation?.id || 0) + '/messages', 'POST', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/conversations/${selectedConversationId}/messages`] 
+        queryKey: ['/api/conversations', selectedConversation?.id, 'messages'] 
       });
     }
   });
@@ -50,15 +62,15 @@ export default function ChatView() {
   
   // Set up WebSocket message handler
   useEffect(() => {
-    if (!socket || !isConnected) return;
+    if (!websocket.socket || websocket.status !== 'open') return;
     
     const handleWebSocketMessage = async (event: MessageEvent) => {
       const data = JSON.parse(event.data);
       
-      if (data.type === 'chunk' && data.conversationId === selectedConversationId) {
+      if (data.type === 'chunk' && data.conversationId === selectedConversation?.id) {
         // Handle message chunk
         queryClient.invalidateQueries({ 
-          queryKey: [`/api/conversations/${selectedConversationId}/messages`] 
+          queryKey: ['/api/conversations', selectedConversation?.id, 'messages'] 
         });
       }
       else if (data.type === 'done') {
@@ -70,18 +82,31 @@ export default function ChatView() {
       }
     };
     
-    socket.addEventListener('message', handleWebSocketMessage);
+    websocket.socket.addEventListener('message', handleWebSocketMessage);
     
     return () => {
-      socket.removeEventListener('message', handleWebSocketMessage);
+      if (websocket.socket) {
+        websocket.socket.removeEventListener('message', handleWebSocketMessage);
+      }
     };
-  }, [socket, isConnected, selectedConversationId]);
+  }, [websocket.socket, websocket.status, selectedConversation?.id]);
+  
+  // Function to send message to Gemini API through REST endpoint
+  const sendMessageToGemini = async (model: string, messages: any[], params: ModelParameters) => {
+    const response = await apiRequest('/api/gemini/chat', 'POST', {
+      model,
+      messages,
+      parameters: params
+    });
+    return response;
+  };
   
   // Handle message submission
   const handleSubmit = async (text: string, files: File[]) => {
     // Create new conversation if needed
-    if (!selectedConversationId) {
-      await createNewConversation(selectedModel, text.substring(0, 30) + (text.length > 30 ? '...' : ''));
+    if (!selectedConversation) {
+      const title = text.substring(0, 30) + (text.length > 30 ? '...' : '');
+      await createConversation(title);
       return; // The effect will trigger a re-render with the new conversation
     }
     
@@ -121,12 +146,12 @@ export default function ChatView() {
     
     // Get all messages for context
     const updatedMessages = await queryClient.fetchQuery({
-      queryKey: [`/api/conversations/${selectedConversationId}/messages`]
-    });
+      queryKey: ['/api/conversations', selectedConversation.id, 'messages']
+    }) as any[];
     
     // Send the message to Gemini via WebSocket for streaming
-    if (socket && isConnected && parameters.stream) {
-      socket.send(JSON.stringify({
+    if (websocket.socket && websocket.status === 'open' && parameters.stream) {
+      websocket.sendMessage(JSON.stringify({
         type: 'generate',
         stream: true,
         model: selectedModel,
@@ -135,7 +160,7 @@ export default function ChatView() {
           content: msg.content
         })),
         parameters,
-        conversationId: selectedConversationId
+        conversationId: selectedConversation.id
       }));
       
       // Create empty assistant message to start streaming
@@ -153,7 +178,7 @@ export default function ChatView() {
             content: msg.content
           })),
           parameters
-        );
+        ) as any;
         
         if (response && response.candidates && response.candidates[0]?.content) {
           const assistantContent = response.candidates[0].content.parts.map((part: any) => {
@@ -186,12 +211,12 @@ export default function ChatView() {
             key={idx}
             remarkPlugins={[remarkGfm]}
             components={{
-              code({ node, inline, className, children, ...props }) {
+              code({ node, className, children, ...props }) {
                 const match = /language-(\w+)/.exec(className || '');
                 const language = match ? match[1] : '';
                 const code = String(children).replace(/\n$/, '');
                 
-                if (inline) {
+                if ((props as any).inline) {
                   return <code className="bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded font-mono text-sm" {...props}>{children}</code>;
                 }
                 
@@ -228,6 +253,8 @@ export default function ChatView() {
     );
   }
   
+  const typedMessages = messages as any[];
+  
   return (
     <>
       {/* Conversation Display Area */}
@@ -249,7 +276,7 @@ export default function ChatView() {
         </div>
         
         {/* Conversation Messages */}
-        {messages.map((message: any) => {
+        {typedMessages.map((message: any) => {
           const isUser = message.role === 'user';
           const isSystem = message.role === 'system';
           
@@ -298,7 +325,7 @@ export default function ChatView() {
         )}
         
         {/* Empty state when no messages */}
-        {messages.length === 0 && !isGenerating && (
+        {typedMessages.length === 0 && !isGenerating && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
               <span className="material-icons text-primary text-2xl">chat</span>

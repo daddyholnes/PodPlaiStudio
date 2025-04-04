@@ -1,20 +1,12 @@
-import { useContext } from 'react';
-import { ConversationsContext } from '@/contexts/conversations-context';
+import { useConversationsContext, UseConversationsReturn } from '../contexts/conversations-context';
 
-// Define the Conversation type
-export type Conversation = {
-  id: number;
-  title: string;
-  model: string;
-  createdAt: string;
-};
+// Re-export the interface
+export type { UseConversationsReturn };
 
-export function useConversations() {
-  const context = useContext(ConversationsContext);
-  
-  if (!context) {
-    throw new Error('useConversations must be used within a ConversationsProvider');
-  }
-  
-  return context;
+// Re-export the Conversation type
+export { type Conversation } from '@shared/schema';
+
+export function useConversations(): UseConversationsReturn {
+  // Simply re-export the context hook for compatibility
+  return useConversationsContext();
 }

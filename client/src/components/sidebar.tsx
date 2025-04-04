@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '@/hooks/use-theme';
 import { useGeminiContext } from '@/hooks/use-gemini-context';
 import { useToast } from '@/hooks/use-toast';
-import { useConversations } from '@/hooks/use-conversations';
+import { useConversationsContext } from '@/contexts/conversations-context';
 import ConversationsList from './conversations-list';
 
 interface SidebarProps {
@@ -15,7 +14,7 @@ export default function Sidebar({ activeTab }: SidebarProps) {
   const { toggleDarkMode, isDarkMode } = useTheme();
   const { modelConfig, updateModelConfig } = useGeminiContext();
   const { toast } = useToast();
-  const { conversations, createNewConversation, selectedConversationId } = useConversations();
+  const { conversations, createConversation, selectedConversation } = useConversationsContext();
   
   // Query API status
   const { data: apiStatus } = useQuery({
@@ -25,7 +24,7 @@ export default function Sidebar({ activeTab }: SidebarProps) {
 
   // Handle creating a new conversation
   const handleNewConversation = () => {
-    createNewConversation(modelConfig.model);
+    createConversation("New conversation");
   };
 
   return (

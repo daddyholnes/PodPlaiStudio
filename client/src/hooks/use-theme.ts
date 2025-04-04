@@ -1,12 +1,24 @@
-import { useContext } from 'react';
-import { ThemeContext } from '@/contexts/theme-context';
+// Re-export the theme context hook to maintain backward compatibility
+import { useThemeContext } from '../contexts/theme-context';
 
-export function useTheme() {
-  const context = useContext(ThemeContext);
+interface UseThemeReturn {
+  isDarkMode: boolean;
+  toggleDarkMode: () => void;
+  appearance: 'light' | 'dark' | 'system';
+  setAppearance: (appearance: 'light' | 'dark' | 'system') => void;
+}
+
+export function useTheme(): UseThemeReturn {
+  const { isDark, appearance, setAppearance } = useThemeContext();
   
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
+  const toggleDarkMode = () => {
+    setAppearance(isDark ? 'light' : 'dark');
+  };
   
-  return context;
+  return {
+    isDarkMode: isDark,
+    toggleDarkMode,
+    appearance,
+    setAppearance
+  };
 }

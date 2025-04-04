@@ -1,38 +1,15 @@
-import { useState, useCallback, useContext } from 'react';
+import { useState, useCallback } from 'react';
 import { useWebSocket } from '@/hooks/use-websocket';
-import { MessagePart, MessageRole, ModelParameters } from '@/../../shared/schema';
-import { ThemeContext } from '@/contexts/theme-context';
-
-// Basic default parameters for Gemini models
-const defaultParameters = {
-  temperature: 0.7,
-  maxOutputTokens: 2048,
-  topK: 40,
-  topP: 0.95,
-  systemInstructions: "You are PodPlay Assistant, a helpful AI built to assist with coding, content generation, and answering questions.",
-  stream: true
-};
+import { MessagePart, MessageRole, ModelParameters } from '@shared/schema';
+import { useTheme } from '@/hooks/use-theme';
+import { useGeminiContext } from '@/hooks/use-gemini-context';
 
 export function useGemini() {
-  const [selectedModel, setSelectedModel] = useState('gemini-1.5-pro');
-  const [parameters, setParameters] = useState<ModelParameters & {systemInstructions?: string}>(defaultParameters);
+  const { modelConfig } = useGeminiContext();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { isDarkMode } = useContext(ThemeContext) || { isDarkMode: false };
-  const { socket, isConnected, sendMessage, useMessageHandler } = useWebSocket();
-  
-  // Function to update model parameters
-  const updateModelParameters = useCallback((newParams: Partial<ModelParameters & {systemInstructions?: string}>) => {
-    setParameters(prev => ({
-      ...prev,
-      ...newParams
-    }));
-  }, []);
-  
-  // Function to change the selected model
-  const changeModel = useCallback((model: string) => {
-    setSelectedModel(model);
-  }, []);
+  const { isDarkMode } = useTheme();
+  const websocket = useWebSocket();
   
   // Generate text with Gemini
   const generate = useCallback(async (
@@ -50,7 +27,7 @@ export function useGemini() {
         
       // Combine default parameters with provided ones
       const combinedParams = {
-        ...parameters,
+        ...modelConfig,
         ...modelParams
       };
       
@@ -61,7 +38,7 @@ export function useGemini() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: selectedModel,
+          model: modelConfig.model,
           messages: [{ role: 'user', content: formattedPrompt }],
           params: combinedParams,
         }),
@@ -81,7 +58,7 @@ export function useGemini() {
       setIsLoading(false);
       return '';
     }
-  }, [parameters, selectedModel]);
+  }, [modelConfig]);
   
   // Send a message to Gemini (for chat)
   const sendMessageToGemini = useCallback(async (
@@ -94,11 +71,11 @@ export function useGemini() {
     
     try {
       // Use the provided model or fallback to selected model
-      const useModel = model || selectedModel;
+      const useModel = model || modelConfig.model;
       
       // Combine parameters
       const combinedParams = {
-        ...parameters,
+        ...modelConfig,
         ...customParams
       };
       
@@ -137,7 +114,7 @@ export function useGemini() {
       setIsLoading(false);
       return { candidates: [] };
     }
-  }, [parameters, selectedModel]);
+  }, [modelConfig]);
   
   // Clear error state
   const clearError = useCallback(() => {
@@ -145,19 +122,12 @@ export function useGemini() {
   }, []);
   
   return {
-    // Model configuration
-    selectedModel,
-    parameters,
-    setSelectedModel: changeModel,
-    updateModelParameters,
-    
     // API functions
     generate,
     sendMessageToGemini,
     
-    // WebSocket (needed for component interfaces)
-    socket,
-    isConnected,
+    // WebSocket status and connection
+    websocket,
     
     // State
     isLoading,

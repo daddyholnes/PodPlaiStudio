@@ -8,13 +8,19 @@ import GenerateView from "@/components/generate-view";
 import CodeView from "@/components/code-view";
 import LiveApiView from "@/components/live-api-view";
 import ConfigPanel from "@/components/config-panel";
+import ErrorBoundary from "@/components/error-boundary";
+import { ThemeProvider } from "@/contexts/theme-context";
+import { GeminiProvider } from "@/contexts/gemini-context";
+import { ConversationsProvider } from "@/contexts/conversations-context";
 
 function MainLayout() {
   const [activeTab, setActiveTab] = useState<'chat' | 'generate' | 'code' | 'liveapi'>('chat');
 
   return (
     <div className="flex h-screen dark:dark">
-      <Sidebar activeTab={activeTab} />
+      <ErrorBoundary>
+        <Sidebar activeTab={activeTab} />
+      </ErrorBoundary>
       
       <div className="flex-grow flex flex-col h-full overflow-hidden bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-200">
         {/* Navigation Tabs */}
@@ -74,14 +80,18 @@ function MainLayout() {
         <div className="flex-grow flex overflow-hidden">
           {/* Display the active tab content */}
           <div className="flex-grow flex flex-col overflow-hidden">
-            {activeTab === 'chat' && <ChatView />}
-            {activeTab === 'generate' && <GenerateView />}
-            {activeTab === 'code' && <CodeView />}
-            {activeTab === 'liveapi' && <LiveApiView />}
+            <ErrorBoundary>
+              {activeTab === 'chat' && <ChatView />}
+              {activeTab === 'generate' && <GenerateView />}
+              {activeTab === 'code' && <CodeView />}
+              {activeTab === 'liveapi' && <LiveApiView />}
+            </ErrorBoundary>
           </div>
           
           {/* Configuration Panel */}
-          <ConfigPanel />
+          <ErrorBoundary>
+            <ConfigPanel />
+          </ErrorBoundary>
         </div>
       </div>
     </div>
@@ -90,13 +100,19 @@ function MainLayout() {
 
 function App() {
   return (
-    <div className="font-roboto">
-      <Switch>
-        <Route path="/" component={MainLayout} />
-        <Route component={NotFound} />
-      </Switch>
-      <Toaster />
-    </div>
+    <ThemeProvider>
+      <GeminiProvider>
+        <ConversationsProvider>
+          <div className="font-roboto">
+            <Switch>
+              <Route path="/" component={MainLayout} />
+              <Route component={NotFound} />
+            </Switch>
+            <Toaster />
+          </div>
+        </ConversationsProvider>
+      </GeminiProvider>
+    </ThemeProvider>
   );
 }
 

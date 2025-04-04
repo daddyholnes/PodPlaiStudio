@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { useGemini } from '@/hooks/use-gemini';
+import { useGeminiContext } from '@/hooks/use-gemini-context';
 import { useQuery } from '@tanstack/react-query';
 
 export default function ConfigPanel() {
   const { 
-    parameters, 
-    updateParameters,
-    streamResponse
-  } = useGemini();
+    modelConfig, 
+    updateModelConfig, 
+    availableModels 
+  } = useGeminiContext();
   
   // Query API status
   const { data: apiStatus } = useQuery({
@@ -24,19 +24,33 @@ export default function ConfigPanel() {
       
       <div className="flex-grow overflow-y-auto">
         <div className="p-4 space-y-6">
+          {/* Model Selection */}
+          <div>
+            <label className="text-sm font-medium block mb-2">Model</label>
+            <select
+              className="w-full border border-neutral-300 dark:border-neutral-700 rounded-lg p-2 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary focus:border-transparent"
+              value={modelConfig.model}
+              onChange={(e) => updateModelConfig({ model: e.target.value })}
+            >
+              {Object.entries(availableModels).map(([id, name]) => (
+                <option key={id} value={id}>{name}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Temperature */}
           <div>
             <div className="flex justify-between mb-2">
               <label className="text-sm font-medium">Temperature</label>
-              <span className="text-sm">{parameters.temperature.toFixed(1)}</span>
+              <span className="text-sm">{modelConfig.temperature.toFixed(1)}</span>
             </div>
             <input 
               type="range" 
               min="0" 
               max="1" 
               step="0.1" 
-              value={parameters.temperature}
-              onChange={(e) => updateParameters({ temperature: parseFloat(e.target.value) })}
+              value={modelConfig.temperature}
+              onChange={(e) => updateModelConfig({ temperature: parseFloat(e.target.value) })}
               className="w-full h-2 bg-neutral-300 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer"
             />
             <div className="flex justify-between text-xs text-neutral-500 mt-1">
@@ -50,15 +64,15 @@ export default function ConfigPanel() {
           <div>
             <div className="flex justify-between mb-2">
               <label className="text-sm font-medium">Max Output Tokens</label>
-              <span className="text-sm">{parameters.maxOutputTokens}</span>
+              <span className="text-sm">{modelConfig.maxOutputTokens}</span>
             </div>
             <input 
               type="range" 
               min="1" 
               max="8192" 
               step="1" 
-              value={parameters.maxOutputTokens}
-              onChange={(e) => updateParameters({ maxOutputTokens: parseInt(e.target.value) })}
+              value={modelConfig.maxOutputTokens}
+              onChange={(e) => updateModelConfig({ maxOutputTokens: parseInt(e.target.value) })}
               className="w-full h-2 bg-neutral-300 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer"
             />
           </div>
@@ -67,15 +81,15 @@ export default function ConfigPanel() {
           <div>
             <div className="flex justify-between mb-2">
               <label className="text-sm font-medium">Top K</label>
-              <span className="text-sm">{parameters.topK}</span>
+              <span className="text-sm">{modelConfig.topK}</span>
             </div>
             <input 
               type="range" 
               min="1" 
               max="40" 
               step="1" 
-              value={parameters.topK}
-              onChange={(e) => updateParameters({ topK: parseInt(e.target.value) })}
+              value={modelConfig.topK}
+              onChange={(e) => updateModelConfig({ topK: parseInt(e.target.value) })}
               className="w-full h-2 bg-neutral-300 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer"
             />
           </div>
@@ -84,15 +98,15 @@ export default function ConfigPanel() {
           <div>
             <div className="flex justify-between mb-2">
               <label className="text-sm font-medium">Top P</label>
-              <span className="text-sm">{parameters.topP.toFixed(2)}</span>
+              <span className="text-sm">{modelConfig.topP.toFixed(2)}</span>
             </div>
             <input 
               type="range" 
               min="0" 
               max="1" 
               step="0.01" 
-              value={parameters.topP}
-              onChange={(e) => updateParameters({ topP: parseFloat(e.target.value) })}
+              value={modelConfig.topP}
+              onChange={(e) => updateModelConfig({ topP: parseFloat(e.target.value) })}
               className="w-full h-2 bg-neutral-300 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer"
             />
           </div>
@@ -106,12 +120,12 @@ export default function ConfigPanel() {
               <div className="flex justify-between items-center">
                 <label className="text-sm">Stream Response</label>
                 <button 
-                  className={`w-9 h-5 relative rounded-full ${parameters.stream ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-700'}`}
-                  onClick={() => updateParameters({ stream: !parameters.stream })}
+                  className={`w-9 h-5 relative rounded-full ${modelConfig.stream ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-700'}`}
+                  onClick={() => updateModelConfig({ stream: !modelConfig.stream })}
                 >
                   <span 
                     className={`absolute h-4 w-4 ${
-                      parameters.stream ? 'left-4' : 'left-0.5'
+                      modelConfig.stream ? 'left-4' : 'left-0.5'
                     } top-0.5 rounded-full bg-white transition-all duration-200`}
                   ></span>
                 </button>
@@ -124,8 +138,8 @@ export default function ConfigPanel() {
                   className="w-full border border-neutral-300 dark:border-neutral-700 rounded-lg p-2 bg-white dark:bg-neutral-900 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary focus:border-transparent"
                   rows={3}
                   placeholder="Define how the assistant behaves..."
-                  value={parameters.systemInstructions || ''}
-                  onChange={(e) => updateParameters({ systemInstructions: e.target.value })}
+                  value={modelConfig.systemInstructions || ''}
+                  onChange={(e) => updateModelConfig({ systemInstructions: e.target.value })}
                 />
               </div>
               
