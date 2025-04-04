@@ -1,57 +1,94 @@
-import { useState, useEffect, useRef } from 'react';
+// Define the connection protocol based on the current environment
+const getWebSocketUrl = () => {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}/ws`;
+};
 
-export function useWebSocket() {
-  const [isConnected, setIsConnected] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const socketRef = useRef<WebSocket | null>(null);
+// WebSocket connection instance
+let socket: WebSocket | null = null;
 
-  useEffect(() => {
-    // Create WebSocket connection
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
+// Connection status
+let isConnected = false;
+
+// Queue of message callbacks
+type MessageCallback = (event: MessageEvent) => void;
+const messageCallbacks: MessageCallback[] = [];
+
+// Initialize the WebSocket connection
+export const initWebSocket = (): WebSocket => {
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    socket = new WebSocket(getWebSocketUrl());
     
-    const socket = new WebSocket(wsUrl);
-    socketRef.current = socket;
-    
-    // Connection opened
-    socket.addEventListener('open', () => {
+    socket.onopen = () => {
       console.log('WebSocket connection established');
-      setIsConnected(true);
-      setError(null);
-    });
-    
-    // Connection error
-    socket.addEventListener('error', (event) => {
-      console.error('WebSocket error:', event);
-      setError('WebSocket connection error');
-    });
-    
-    // Connection closed
-    socket.addEventListener('close', (event) => {
-      console.log('WebSocket connection closed:', event.code, event.reason);
-      setIsConnected(false);
-      
-      // Attempt to reconnect after a delay, unless explicitly closed
-      if (event.code !== 1000) {
-        setTimeout(() => {
-          console.log('Attempting to reconnect WebSocket...');
-          // The next render cycle will attempt to reconnect
-          setError('Connection closed. Reconnecting...');
-        }, 3000);
-      }
-    });
-    
-    // Clean up on unmount
-    return () => {
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.close(1000, 'Component unmounted');
-      }
+      isConnected = true;
     };
-  }, [error]); // Reconnect when there's an error
 
-  return {
-    socket: socketRef.current,
-    isConnected,
-    error
-  };
-}
+    socket.onclose = () => {
+      console.log('WebSocket connection closed');
+      isConnected = false;
+      
+      // Reconnect after 2 seconds
+      setTimeout(() => {
+        console.log('Attempting to reconnect WebSocket...');
+        initWebSocket();
+      }, 2000);
+    };
+
+    socket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    socket.onmessage = (event) => {
+      // Call all registered message handlers
+      messageCallbacks.forEach(callback => {
+        try {
+          callback(event);
+        } catch (error) {
+          console.error('Error in message callback:', error);
+        }
+      });
+    };
+  }
+  
+  return socket;
+};
+
+// Send a message through the WebSocket
+export const sendWebSocketMessage = (message: any): boolean => {
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    console.error('WebSocket is not connected');
+    // Try to reconnect
+    socket = initWebSocket();
+    return false;
+  }
+  
+  try {
+    socket.send(JSON.stringify(message));
+    return true;
+  } catch (error) {
+    console.error('Error sending WebSocket message:', error);
+    return false;
+  }
+};
+
+// Add a message handler
+export const addWebSocketMessageHandler = (callback: MessageCallback): void => {
+  messageCallbacks.push(callback);
+};
+
+// Remove a message handler
+export const removeWebSocketMessageHandler = (callback: MessageCallback): void => {
+  const index = messageCallbacks.indexOf(callback);
+  if (index !== -1) {
+    messageCallbacks.splice(index, 1);
+  }
+};
+
+// Check if WebSocket is connected
+export const isWebSocketConnected = (): boolean => {
+  return isConnected && socket !== null && socket.readyState === WebSocket.OPEN;
+};
+
+// Initialize the WebSocket connection when this module is imported
+initWebSocket();

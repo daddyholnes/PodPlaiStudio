@@ -1,72 +1,120 @@
+import { MessagePart, MessageRole, ModelParameters } from '@/../../shared/schema';
 import { apiRequest } from './queryClient';
 
-export interface GeminiParameters {
-  temperature: number;
-  maxOutputTokens: number;
-  topK: number;
-  topP: number;
-  stream: boolean;
-  systemInstructions?: string;
-}
-
-export interface GeminiMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: {
-    type: string;
-    text?: string;
-    fileData?: string;
-    mimeType?: string;
+export interface GeminiRequest {
+  messages: {
+    role: MessageRole;
+    content: MessagePart[];
   }[];
+  modelParams?: ModelParameters;
 }
 
-// Generate content with the Gemini API
-export async function generateContent(
-  model: string,
-  messages: GeminiMessage[],
-  parameters: GeminiParameters
-) {
-  try {
-    const response = await apiRequest('POST', '/api/generate', {
-      model,
-      messages,
-      parameters
-    });
+// Function to generate text using the Gemini API
+export async function generateText(
+  prompt: string | MessagePart[], 
+  modelParams?: ModelParameters
+): Promise<string> {
+  const content = typeof prompt === 'string' 
+    ? [{ type: 'text', text: prompt }] as MessagePart[]
+    : prompt;
     
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error generating content:', error);
-    throw error;
-  }
-}
+  const request: GeminiRequest = {
+    messages: [{ role: 'user', content }],
+    modelParams
+  };
 
-// Function to estimate token count
-export function estimateTokenCount(text: string): number {
-  // A very rough estimation of token count
-  // On average, 1 token is roughly 4 characters for English text
-  // This is a very simple approximation and can vary widely
-  return Math.ceil(text.length / 4);
-}
-
-// Upload a file and return its base64 representation
-export async function uploadFile(file: File): Promise<{
-  fileData: string;
-  mimeType: string;
-  filename: string;
-  size: number;
-}> {
-  const formData = new FormData();
-  formData.append('file', file);
-  
-  const response = await fetch('/api/upload', {
-    method: 'POST',
-    body: formData
-  });
+  const response = await apiRequest('POST', '/api/gemini/generate', request);
+  const data = await response.json();
   
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`File upload failed: ${error}`);
+    throw new Error(data.error || 'Failed to generate text');
   }
   
-  return await response.json();
+  return data.text;
+}
+
+// Function to generate streaming text using WebSockets
+export function generateTextStream(
+  prompt: string | MessagePart[],
+  modelParams?: ModelParameters
+): string {
+  const content = typeof prompt === 'string'
+    ? [{ type: 'text', text: prompt }] as MessagePart[]
+    : prompt;
+    
+  const requestId = Date.now().toString();
+  
+  // Return the requestId which will be used to match WebSocket responses
+  return requestId;
+}
+
+// Function to chat with the Gemini API
+export async function chatWithGemini(
+  messages: {
+    role: MessageRole;
+    content: MessagePart[];
+  }[],
+  modelParams?: ModelParameters
+): Promise<string> {
+  const request: GeminiRequest = {
+    messages,
+    modelParams
+  };
+
+  const response = await apiRequest('POST', '/api/gemini/chat', request);
+  const data = await response.json();
+  
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to chat with Gemini');
+  }
+  
+  return data.text;
+}
+
+// Function to chat with streaming responses using WebSockets
+export function chatWithGeminiStream(
+  messages: {
+    role: MessageRole;
+    content: MessagePart[];
+  }[],
+  modelParams?: ModelParameters
+): string {
+  const requestId = Date.now().toString();
+  
+  // Return the requestId which will be used to match WebSocket responses
+  return requestId;
+}
+
+// Function to count tokens for a given text
+export async function countTokens(text: string): Promise<number> {
+  const response = await apiRequest('POST', '/api/gemini/tokens', { text });
+  const data = await response.json();
+  
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to count tokens');
+  }
+  
+  return data.tokens;
+}
+
+// Function to execute code with Gemini
+export async function executeCode(
+  code: string,
+  language?: string
+): Promise<{ output: string; error?: string }> {
+  const response = await apiRequest('POST', '/api/gemini/execute', { 
+    code,
+    language 
+  });
+  
+  const data = await response.json();
+  
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to execute code');
+  }
+  
+  return {
+    output: data.output,
+    error: data.error
+  };
 }

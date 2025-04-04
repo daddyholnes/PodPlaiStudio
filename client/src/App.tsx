@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -9,18 +9,16 @@ import ChatView from "@/components/chat-view";
 import GenerateView from "@/components/generate-view";
 import CodeView from "@/components/code-view";
 import LiveApiView from "@/components/live-api-view";
-import { useTheme } from "@/hooks/use-theme";
 import ConfigPanel from "@/components/config-panel";
 
 function MainLayout() {
   const [activeTab, setActiveTab] = useState<'chat' | 'generate' | 'code' | 'liveapi'>('chat');
-  const { isDarkMode } = useTheme();
 
   return (
-    <div className={`flex h-screen ${isDarkMode ? 'dark' : ''}`}>
+    <div className="flex h-screen dark:dark">
       <Sidebar activeTab={activeTab} />
       
-      <div className="flex-grow flex flex-col h-full overflow-hidden bg-lightbg dark:bg-darkbg text-neutral-900 dark:text-neutral-200">
+      <div className="flex-grow flex flex-col h-full overflow-hidden bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-200">
         {/* Navigation Tabs */}
         <div className="border-b border-neutral-300 dark:border-neutral-700">
           <nav className="flex">
