@@ -21,6 +21,9 @@ export default function ChatView() {
   const wsRef = useRef<WebSocket | null>(null);
   const websocket = useWebSocket();
   
+  // Keep track of pending text to avoid multiple submissions
+  const pendingSubmissionRef = useRef<{text: string, files: File[]} | null>(null);
+  
   // Extract selected model and parameters from modelConfig
   const selectedModel = modelConfig.model;
   const parameters: ModelParameters = {
@@ -101,6 +104,20 @@ export default function ChatView() {
     return response;
   };
   
+  // Effect to send pending message when conversation is selected
+  useEffect(() => {
+    // If we have a selected conversation and a pending message, send it
+    if (selectedConversation && pendingSubmissionRef.current) {
+      const { text, files } = pendingSubmissionRef.current;
+      pendingSubmissionRef.current = null; // Clear to prevent duplicate sends
+      
+      // Small delay to ensure state is fully updated
+      setTimeout(() => {
+        handleSubmit(text, files);
+      }, 100);
+    }
+  }, [selectedConversation]);
+  
   // Handle message submission
   const handleSubmit = async (text: string, files: File[]) => {
     try {
@@ -108,22 +125,19 @@ export default function ChatView() {
       if (!selectedConversation) {
         const title = text.substring(0, 30) + (text.length > 30 ? '...' : '');
         console.log("Creating new conversation:", title);
-        await createConversation(title);
         
-        // Wait a brief moment for state to update
-        setTimeout(() => {
-          if (text.trim()) {
-            // Resubmit with the text after the conversation is created
-            handleSubmit(text, files);
-          }
-        }, 500);
+        // Store the text and files for later use
+        pendingSubmissionRef.current = { text, files };
+        
+        await createConversation(title);
+        // The effect for selectedConversation change will handle sending the message
         return;
       }
-    
-      console.log("Sending message to conversation:", selectedConversation?.id);
+      
+      console.log("Sending message to conversation:", selectedConversation.id);
       setIsGenerating(true);
-    
-      // Process image files if any
+      
+      // Process image files
       const processedFiles = await Promise.all(
         files.map(async (file) => {
           if (file.type.startsWith('image/')) {
@@ -142,77 +156,77 @@ export default function ChatView() {
           return null;
         })
       );
-    } catch (error) {
-      console.error("Error in handleSubmit:", error);
-      setIsGenerating(false);
-    }
-    
-    // Create user message content parts
-    const userMessageParts = [
-      { type: 'text', text },
-      ...processedFiles.filter(Boolean) as any[]
-    ];
-    
-    // Save user message to the conversation
-    await addMessageMutation.mutateAsync({
-      role: 'user',
-      content: userMessageParts
-    });
-    
-    // Get all messages for context
-    const updatedMessages = await queryClient.fetchQuery({
-      queryKey: ['/api/conversations', selectedConversation.id, 'messages']
-    }) as any[];
-    
-    // Send the message to Gemini via WebSocket for streaming
-    if (websocket.socket && websocket.status === 'open' && parameters.stream) {
-      websocket.sendMessage(JSON.stringify({
-        type: 'generate',
-        stream: true,
-        model: selectedModel,
-        messages: updatedMessages.map((msg: any) => ({
-          role: msg.role,
-          content: msg.content
-        })),
-        parameters,
-        conversationId: selectedConversation.id
-      }));
       
-      // Create empty assistant message to start streaming
+      // Create user message content parts
+      const userMessageParts = [
+        { type: 'text' as const, text },
+        ...processedFiles.filter(Boolean) as any[]
+      ];
+      
+      // Save user message to the conversation
       await addMessageMutation.mutateAsync({
-        role: 'assistant',
-        content: [{ type: 'text', text: '' }]
+        role: 'user',
+        content: userMessageParts
       });
-    } else {
-      // Non-streaming fallback
-      try {
-        const response = await sendMessageToGemini(
-          selectedModel,
-          updatedMessages.map((msg: any) => ({
+      
+      // Get all messages for context
+      const updatedMessages = await queryClient.fetchQuery({
+        queryKey: ['/api/conversations', selectedConversation.id, 'messages']
+      }) as any[];
+      
+      // Send the message to Gemini via WebSocket for streaming
+      if (websocket.socket && websocket.status === 'open' && parameters.stream) {
+        websocket.sendMessage(JSON.stringify({
+          type: 'generate',
+          stream: true,
+          model: selectedModel,
+          messages: updatedMessages.map((msg: any) => ({
             role: msg.role,
             content: msg.content
           })),
-          parameters
-        ) as any;
+          parameters,
+          conversationId: selectedConversation.id
+        }));
         
-        if (response && response.candidates && response.candidates[0]?.content) {
-          const assistantContent = response.candidates[0].content.parts.map((part: any) => {
-            if (part.text) {
-              return { type: 'text', text: part.text };
-            }
-            return null;
-          }).filter(Boolean);
+        // Create empty assistant message to start streaming
+        await addMessageMutation.mutateAsync({
+          role: 'assistant',
+          content: [{ type: 'text', text: '' }]
+        });
+      } else {
+        // Non-streaming fallback
+        try {
+          const response = await sendMessageToGemini(
+            selectedModel,
+            updatedMessages.map((msg: any) => ({
+              role: msg.role,
+              content: msg.content
+            })),
+            parameters
+          ) as any;
           
-          await addMessageMutation.mutateAsync({
-            role: 'assistant',
-            content: assistantContent.length ? assistantContent : [{ type: 'text', text: 'No response generated.' }]
-          });
+          if (response && response.candidates && response.candidates[0]?.content) {
+            const assistantContent = response.candidates[0].content.parts.map((part: any) => {
+              if (part.text) {
+                return { type: 'text', text: part.text };
+              }
+              return null;
+            }).filter(Boolean);
+            
+            await addMessageMutation.mutateAsync({
+              role: 'assistant',
+              content: assistantContent.length ? assistantContent : [{ type: 'text', text: 'No response generated.' }]
+            });
+          }
+        } catch (err) {
+          console.error('Error sending message:', err);
+        } finally {
+          setIsGenerating(false);
         }
-      } catch (err) {
-        console.error('Error sending message:', err);
-      } finally {
-        setIsGenerating(false);
       }
+    } catch (error) {
+      console.error("Error in handleSubmit:", error);
+      setIsGenerating(false);
     }
   };
   
