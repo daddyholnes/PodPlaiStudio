@@ -23,13 +23,13 @@ export default function CodeView() {
       "Focus on providing high-quality, clean code examples with explanations. " +
       "When appropriate, use proper syntax highlighting and structure your responses with clear explanations.";
     
-    if (parameters.systemInstructions !== codeSystemInstructions) {
+    if (parameters?.systemInstructions !== codeSystemInstructions) {
       // Don't update if user has custom instructions
-      if (!parameters.systemInstructions || parameters.systemInstructions.includes("PodPlay Assistant")) {
+      if (!parameters?.systemInstructions || (parameters?.systemInstructions && parameters.systemInstructions.includes("PodPlay Assistant"))) {
         return;
       }
     }
-  }, [parameters.systemInstructions]);
+  }, [parameters?.systemInstructions]);
   
   // Set up WebSocket message handler
   useEffect(() => {

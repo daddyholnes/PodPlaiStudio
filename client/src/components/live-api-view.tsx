@@ -9,7 +9,7 @@ export default function LiveApiView() {
   // Generate API example based on the current model and parameters
   const getApiExample = (type: 'node' | 'python' | 'curl') => {
     const apiKey = 'process.env.GEMINI_API_KEY';
-    const systemInstruction = parameters.systemInstructions
+    const systemInstruction = parameters?.systemInstructions
       ? `\n  systemInstruction: {
     parts: [{ text: "${parameters.systemInstructions.replace(/"/g, '\\"')}" }]
   },` 
@@ -30,10 +30,10 @@ async function generateContent() {
       }
     ],
     generationConfig: {
-      temperature: ${parameters.temperature},
-      topK: ${parameters.topK},
-      topP: ${parameters.topP},
-      maxOutputTokens: ${parameters.maxOutputTokens},
+      temperature: ${parameters?.temperature},
+      topK: ${parameters?.topK},
+      topP: ${parameters?.topP},
+      maxOutputTokens: ${parameters?.maxOutputTokens},
     },${systemInstruction}
   };
 
@@ -66,13 +66,13 @@ def generate_content():
             }
         ],
         "generationConfig": {
-            "temperature": ${parameters.temperature},
-            "topK": ${parameters.topK},
-            "topP": ${parameters.topP},
-            "maxOutputTokens": ${parameters.maxOutputTokens}
+            "temperature": ${parameters?.temperature},
+            "topK": ${parameters?.topK},
+            "topP": ${parameters?.topP},
+            "maxOutputTokens": ${parameters?.maxOutputTokens}
         }${systemInstruction ? `,
         "systemInstruction": {
-            "parts": [{"text": "${parameters.systemInstructions?.replace(/"/g, '\\"')}"}]
+            "parts": [{"text": "${parameters?.systemInstructions?.replace(/"/g, '\\"')}"}]
         }` : ''}
     }
     
@@ -98,15 +98,15 @@ curl -X POST \\
     }
   ],
   "generationConfig": {
-    "temperature": ${parameters.temperature},
-    "topK": ${parameters.topK},
-    "topP": ${parameters.topP},
-    "maxOutputTokens": ${parameters.maxOutputTokens}
+    "temperature": ${parameters?.temperature},
+    "topK": ${parameters?.topK},
+    "topP": ${parameters?.topP},
+    "maxOutputTokens": ${parameters?.maxOutputTokens}
   }${systemInstruction ? `,
   "systemInstruction": {
     "parts": [
       {
-        "text": "${parameters.systemInstructions?.replace(/"/g, '\\"')}"
+        "text": "${parameters?.systemInstructions?.replace(/"/g, '\\"')}"
       }
     ]
   }` : ''}
@@ -142,11 +142,11 @@ curl -X POST \\
               language="json" 
               code={JSON.stringify({
                 model: selectedModel,
-                temperature: parameters.temperature,
-                topK: parameters.topK,
-                topP: parameters.topP,
-                maxOutputTokens: parameters.maxOutputTokens,
-                systemInstructions: parameters.systemInstructions || undefined
+                temperature: parameters?.temperature,
+                topK: parameters?.topK,
+                topP: parameters?.topP,
+                maxOutputTokens: parameters?.maxOutputTokens,
+                systemInstructions: parameters?.systemInstructions || undefined
               }, null, 2)} 
             />
             

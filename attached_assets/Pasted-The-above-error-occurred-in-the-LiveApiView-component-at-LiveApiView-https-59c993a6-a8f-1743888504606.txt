@@ -1,0 +1,125 @@
+The above error occurred in the <LiveApiView> component:
+
+    at LiveApiView (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/components/live-api-view.tsx:23:41)
+    at ErrorBoundary (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/components/error-boundary.tsx:7:5)
+    at div
+    at div
+    at div
+    at div
+    at MainLayout (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/App.tsx?v=refe2Y7iJoNH8CwE6H5hM:34:37)
+    at Route (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=702ccd63:323:16)
+    at Switch (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=702ccd63:379:17)
+    at div
+    at ConversationsProvider (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/contexts/conversations-context.tsx:24:41)
+    at GeminiProvider (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/contexts/gemini-context.tsx:34:34)
+    at ThemeProvider (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/contexts/theme-context.tsx:20:33)
+    at App
+    at QueryClientProvider (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=702ccd63:2805:3)
+    at AppWithProviders
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+Uncaught error: 
+TypeError {}
+ 
+Object {componentStack: "↵    at LiveApiView…"}
+
+Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Cannot read properties of undefined (reading 'systemInstructions')
+Cannot read properties of undefined (reading 'systemInstructions')
+The above error occurred in the <CodeView> component:
+
+    at CodeView (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/components/code-view.tsx:27:62)
+    at ErrorBoundary (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/components/error-boundary.tsx:7:5)
+    at div
+    at div
+    at div
+    at div
+    at MainLayout (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/App.tsx?v=refe2Y7iJoNH8CwE6H5hM:34:37)
+    at Route (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=702ccd63:323:16)
+    at Switch (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=702ccd63:379:17)
+    at div
+    at ConversationsProvider (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/contexts/conversations-context.tsx:24:41)
+    at GeminiProvider (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/contexts/gemini-context.tsx:34:34)
+    at ThemeProvider (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/contexts/theme-context.tsx:20:33)
+    at App
+    at QueryClientProvider (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=702ccd63:2805:3)
+    at AppWithProviders
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+Uncaught error: 
+TypeError {}
+ 
+Object {componentStack: "↵    at CodeView…"}
+
+Cannot read properties of undefined (reading 'systemInstructions')
+Cannot read properties of undefined (reading 'systemInstructions')
+The above error occurred in the <CodeView> component:
+
+    at CodeView (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/components/code-view.tsx:27:62)
+    at ErrorBoundary (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/components/error-boundary.tsx:7:5)
+    at div
+    at div
+    at div
+    at div
+    at MainLayout (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/App.tsx?v=refe2Y7iJoNH8CwE6H5hM:34:37)
+    at Route (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=702ccd63:323:16)
+    at Switch (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=702ccd63:379:17)
+    at div
+    at ConversationsProvider (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/contexts/conversations-context.tsx:24:41)
+    at GeminiProvider (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/contexts/gemini-context.tsx:34:34)
+    at ThemeProvider (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/contexts/theme-context.tsx:20:33)
+    at App
+    at QueryClientProvider (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=702ccd63:2805:3)
+    at AppWithProviders
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+Uncaught error: 
+TypeError {}
+ 
+Object {componentStack: "↵    at CodeView…"}
+
+Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Cannot read properties of undefined (reading 'systemInstructions')
+Cannot read properties of undefined (reading 'systemInstructions')
+The above error occurred in the <CodeView> component:
+
+    at CodeView (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/components/code-view.tsx:27:62)
+    at ErrorBoundary (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/components/error-boundary.tsx:7:5)
+    at div
+    at div
+    at div
+    at div
+    at MainLayout (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/App.tsx?v=refe2Y7iJoNH8CwE6H5hM:34:37)
+    at Route (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=702ccd63:323:16)
+    at Switch (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=702ccd63:379:17)
+    at div
+    at ConversationsProvider (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/contexts/conversations-context.tsx:24:41)
+    at GeminiProvider (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/contexts/gemini-context.tsx:34:34)
+    at ThemeProvider (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/contexts/theme-context.tsx:20:33)
+    at App
+    at QueryClientProvider (https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=702ccd63:2805:3)
+    at AppWithProviders
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+Uncaught error: 
+TypeError {}
+ 
+Object {componentStack: "↵    at CodeView…"}
+
+Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Creating new conversation: gem?
+Creating conversation with: 
+Object {title: "gem?", model: "gemini-1.5-pro"}
+Conversation created: 
+Object {title: "gem?", model: "gemini-1.5-pro", id: 1, createdAt: "2025-04-05T21:27:31.755Z", updatedAt: "2025-04-05T21:27:31.755Z"}
+New conversation created: 
+Object {title: "gem?", model: "gemini-1.5-pro", id: 1, createdAt: "2025-04-05T21:27:31.755Z", updatedAt: "2025-04-05T21:27:31.755Z"}
+Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Selected conversation updated, sending pending message 1 gem?
+Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Sending message to conversation: 1
+Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Error in handleSubmit: 
+Error {}
+
+Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
