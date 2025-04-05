@@ -20,6 +20,14 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 
+// Extend WebSocket type to include isAlive property
+declare module "ws" {
+  interface WebSocket {
+    isAlive: boolean;
+  }
+}
+import { z } from "zod";
+
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadsDir)) {
@@ -47,18 +55,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // Create WebSocket server with a distinct path to avoid conflicts with Vite
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/ws',
+    // Increase timeout to prevent frequent disconnects
+    clientTracking: true,
+    // Add ping interval to keep connections alive
+    perMessageDeflate: {
+      zlibDeflateOptions: {
+        chunkSize: 1024,
+        memLevel: 7,
+        level: 3
+      },
+      zlibInflateOptions: {
+        chunkSize: 10 * 1024
+      },
+      // Below options specified as default values
+      concurrencyLimit: 10,
+      threshold: 1024 // Size (in bytes) below which messages should not be compressed
+    }
+  });
   console.log('WebSocket server initialized at path: /ws');
   
+  // Set up ping interval to keep connections alive
+  const pingInterval = setInterval(() => {
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.ping();
+        console.log('Ping sent to client');
+      }
+    });
+  }, 30000); // Ping every 30 seconds
+  
   // Handle WebSocket connections
-  wss.on('connection', (ws) => {
-    console.log('Client connected to WebSocket');
+  wss.on('connection', (ws, req) => {
+    console.log('Client connected to WebSocket', req.headers['user-agent']);
+    
+    // Set a timeout for the socket
+    ws.isAlive = true;
+    
+    // Handle pong messages
+    ws.on('pong', () => {
+      ws.isAlive = true;
+      console.log('Received pong from client');
+    });
     
     ws.on('message', async (message) => {
       try {
         // Parse the message
         const data = JSON.parse(message.toString());
         console.log('WebSocket message received:', data.type, data.conversationId || '');
+        
+        // Reset the alive flag on any message
+        ws.isAlive = true;
         
         // Handle different message types
         switch (data.type) {
@@ -418,9 +467,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
     
-    ws.on('close', () => {
-      console.log('Client disconnected from WebSocket');
+    ws.on('close', (code, reason) => {
+      console.log(`Client disconnected from WebSocket with code ${code} and reason: ${reason || 'No reason provided'}`);
+      
+      // Clean up any resources or ongoing operations for this connection
+      ws.isAlive = false;
     });
+    
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+  });
+  
+  // Set up an interval to clean up dead connections
+  const cleanupInterval = setInterval(() => {
+    wss.clients.forEach((client) => {
+      if (!client.isAlive) {
+        console.log('Terminating inactive client');
+        return client.terminate();
+      }
+      
+      client.isAlive = false;
+    });
+  }, 60000); // Check once per minute
+  
+  // Clean up intervals when server shuts down
+  httpServer.on('close', () => {
+    clearInterval(pingInterval);
+    clearInterval(cleanupInterval);
+    console.log('WebSocket server shut down');
   });
   
   // API Routes

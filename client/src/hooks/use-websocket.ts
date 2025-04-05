@@ -13,6 +13,87 @@ interface UseWebSocketOptions {
   maxReconnectAttempts?: number;
 }
 
+// Create a singleton WebSocket instance that can be shared across the app
+let globalSocketRef: WebSocket | null = null;
+let globalStatusListeners: Set<(status: WebSocketStatus) => void> = new Set();
+let globalMessageListeners: Set<(event: MessageEvent) => void> = new Set();
+let reconnectAttempts = 0;
+let reconnectTimeout: number | null = null;
+
+// Function to update status for all listeners
+const updateGlobalStatus = (status: WebSocketStatus) => {
+  globalStatusListeners.forEach(listener => listener(status));
+};
+
+// Function to initialize global WebSocket
+const initGlobalWebSocket = (
+  reconnectInterval = 3000, 
+  maxReconnectAttempts = 10
+) => {
+  if (globalSocketRef && globalSocketRef.readyState === WebSocket.OPEN) {
+    console.log('WebSocket already connected, not creating a new one');
+    return;
+  }
+  
+  // Clean up existing socket if any
+  if (globalSocketRef) {
+    console.log('Closing existing WebSocket before creating a new one');
+    globalSocketRef.close();
+  }
+  
+  console.log(`Initializing global WebSocket (attempt ${reconnectAttempts + 1})`);
+  
+  try {
+    const wsUrl = getWebSocketUrl();
+    globalSocketRef = new WebSocket(wsUrl);
+    updateGlobalStatus('connecting');
+    
+    // Handle open event
+    globalSocketRef.onopen = (event) => {
+      console.log('WebSocket connection opened');
+      reconnectAttempts = 0;
+      updateGlobalStatus('open');
+    };
+    
+    // Handle message event
+    globalSocketRef.onmessage = (event) => {
+      globalMessageListeners.forEach(listener => listener(event));
+    };
+    
+    // Handle close event
+    globalSocketRef.onclose = (event) => {
+      console.log('WebSocket connection closed', event.code, event.reason);
+      updateGlobalStatus('closed');
+      
+      // Handle reconnection
+      if (reconnectAttempts < maxReconnectAttempts) {
+        if (reconnectTimeout) {
+          window.clearTimeout(reconnectTimeout);
+        }
+        
+        reconnectTimeout = window.setTimeout(() => {
+          reconnectAttempts++;
+          initGlobalWebSocket(reconnectInterval, maxReconnectAttempts);
+        }, reconnectInterval);
+      } else {
+        console.error(`Max reconnection attempts (${maxReconnectAttempts}) reached`);
+      }
+    };
+    
+    // Handle error event
+    globalSocketRef.onerror = (event) => {
+      console.error('WebSocket error:', event);
+      updateGlobalStatus('error');
+    };
+  } catch (error) {
+    console.error('Error initializing WebSocket:', error);
+    updateGlobalStatus('error');
+  }
+};
+
+// Initialize the global WebSocket
+initGlobalWebSocket();
+
 export function useWebSocket(options: UseWebSocketOptions = {}) {
   const {
     onMessage,
@@ -20,131 +101,129 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     onClose,
     onError,
     autoReconnect = true,
-    reconnectInterval = 2000,
-    maxReconnectAttempts = 5
+    reconnectInterval = 3000,
+    maxReconnectAttempts = 10
   } = options;
 
-  const [status, setStatus] = useState<WebSocketStatus>('connecting');
-  const [reconnectCount, setReconnectCount] = useState(0);
-  const socketRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<number | null>(null);
-
-  // Initialize WebSocket connection
-  const connect = useCallback(() => {
-    try {
-      // Close existing connection if any
-      if (socketRef.current) {
-        socketRef.current.close();
+  const [status, setStatus] = useState<WebSocketStatus>(
+    globalSocketRef?.readyState === WebSocket.OPEN ? 'open' : 'connecting'
+  );
+  
+  const statusCallbackRef = useRef(setStatus);
+  const messageCallbackRef = useRef(onMessage);
+  
+  // Update the refs when callbacks change
+  useEffect(() => {
+    messageCallbackRef.current = onMessage;
+  }, [onMessage]);
+  
+  useEffect(() => {
+    statusCallbackRef.current = setStatus;
+  }, [setStatus]);
+  
+  // Register status listener
+  useEffect(() => {
+    const statusListener = (newStatus: WebSocketStatus) => {
+      if (statusCallbackRef.current) {
+        statusCallbackRef.current(newStatus);
       }
-
-      // Create new WebSocket connection
-      const wsUrl = getWebSocketUrl();
-      const socket = new WebSocket(wsUrl);
-      socketRef.current = socket;
-      setStatus('connecting');
-
-      // Setup event handlers
-      socket.onopen = (event) => {
-        setStatus('open');
-        setReconnectCount(0);
-        if (onOpen) onOpen(event);
-      };
-
-      socket.onmessage = (event) => {
-        if (onMessage) onMessage(event);
-      };
-
-      socket.onclose = (event) => {
-        setStatus('closed');
-        if (onClose) onClose(event);
-
-        // Handle reconnection
-        if (autoReconnect && reconnectCount < maxReconnectAttempts) {
-          if (reconnectTimeoutRef.current) {
-            window.clearTimeout(reconnectTimeoutRef.current);
-          }
-          
-          reconnectTimeoutRef.current = window.setTimeout(() => {
-            setReconnectCount(prev => prev + 1);
-            connect();
-          }, reconnectInterval);
-        }
-      };
-
-      socket.onerror = (event) => {
-        setStatus('error');
-        if (onError) onError(event);
-        
-        // Auto close on error to trigger reconnect
-        socket.close();
-      };
-    } catch (error) {
-      console.error('WebSocket connection error:', error);
-      setStatus('error');
+      
+      // Call the appropriate event handler
+      if (newStatus === 'open' && onOpen) {
+        onOpen(new Event('open'));
+      } else if (newStatus === 'closed' && onClose) {
+        onClose(new CloseEvent('close'));
+      } else if (newStatus === 'error' && onError) {
+        onError(new Event('error'));
+      }
+    };
+    
+    globalStatusListeners.add(statusListener);
+    
+    // Set initial status
+    if (globalSocketRef) {
+      if (globalSocketRef.readyState === WebSocket.OPEN) {
+        statusListener('open');
+      } else if (globalSocketRef.readyState === WebSocket.CONNECTING) {
+        statusListener('connecting');
+      } else {
+        statusListener('closed');
+      }
     }
-  }, [
-    onMessage, 
-    onOpen, 
-    onClose, 
-    onError, 
-    autoReconnect, 
-    reconnectInterval, 
-    maxReconnectAttempts, 
-    reconnectCount
-  ]);
-
+    
+    return () => {
+      globalStatusListeners.delete(statusListener);
+    };
+  }, [onOpen, onClose, onError]);
+  
+  // Register message listener
+  useEffect(() => {
+    if (!onMessage) return;
+    
+    const messageListener = (event: MessageEvent) => {
+      if (messageCallbackRef.current) {
+        messageCallbackRef.current(event);
+      }
+    };
+    
+    globalMessageListeners.add(messageListener);
+    
+    return () => {
+      globalMessageListeners.delete(messageListener);
+    };
+  }, [onMessage]);
+  
+  // Reconnect functionality
+  const reconnect = useCallback(() => {
+    reconnectAttempts = 0;
+    initGlobalWebSocket(reconnectInterval, maxReconnectAttempts);
+  }, [reconnectInterval, maxReconnectAttempts]);
+  
   // Send message via WebSocket
   const sendMessage = useCallback((data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+    if (globalSocketRef && globalSocketRef.readyState === WebSocket.OPEN) {
       try {
-        socketRef.current.send(data);
+        globalSocketRef.send(data);
         return true;
       } catch (error) {
         console.error('Error sending WebSocket message:', error);
         return false;
       }
     } else {
-      console.warn('WebSocket not ready, current state:', socketRef.current?.readyState);
-      // If socket isn't ready but exists, try to reconnect
-      if (socketRef.current && socketRef.current.readyState !== WebSocket.CONNECTING) {
-        connect();
+      console.warn('WebSocket not ready, current state:', globalSocketRef?.readyState);
+      
+      // If socket isn't connected, try to reconnect
+      if (!globalSocketRef || globalSocketRef.readyState >= WebSocket.CLOSING) {
+        reconnect();
       }
       return false;
     }
-  }, [connect]);
-
-  // Close WebSocket connection
+  }, [reconnect]);
+  
+  // Close connection and prevent auto-reconnect
   const closeConnection = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      window.clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
+    if (reconnectTimeout) {
+      window.clearTimeout(reconnectTimeout);
+      reconnectTimeout = null;
     }
     
-    if (socketRef.current) {
-      socketRef.current.close();
-      socketRef.current = null;
+    if (globalSocketRef) {
+      try {
+        globalSocketRef.close();
+        globalSocketRef = null;
+      } catch (e) {
+        console.error('Error closing WebSocket:', e);
+      }
     }
-    
-    setStatus('closed');
   }, []);
-
-  // Initialize WebSocket on component mount
-  useEffect(() => {
-    connect();
-
-    // Cleanup on unmount
-    return () => {
-      closeConnection();
-    };
-  }, [connect, closeConnection]);
-
+  
   return {
     status,
-    socket: socketRef.current,
+    socket: globalSocketRef,
     isConnected: status === 'open',
     sendMessage,
     closeConnection,
-    reconnect: connect,
-    reconnectCount
+    reconnect,
+    reconnectCount: reconnectAttempts
   };
 }
