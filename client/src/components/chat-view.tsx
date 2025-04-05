@@ -204,8 +204,9 @@ export default function ChatView() {
       
       // Send the message to Gemini via WebSocket for streaming
       if (websocket.socket && websocket.status === 'open' && parameters.stream) {
+        console.log("Sending chat message via WebSocket:", selectedConversation.id);
         websocket.sendMessage(JSON.stringify({
-          type: 'generate',
+          type: 'chat',
           stream: true,
           model: selectedModel,
           messages: updatedMessages.map((msg: any) => ({

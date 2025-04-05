@@ -10,9 +10,12 @@ import {
   MessageRoleEnum, 
   MessageRole,
   MessagePartTypeEnum,
+  MessagePartType,
   ModelParametersSchema, 
   insertConversationSchema, 
-  insertMessageSchema
+  insertMessageSchema,
+  MessagePart,
+  MessagePartSchema
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -165,15 +168,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           case "chat": {
             // Handle chat messages (streaming or non-streaming)
             const { model, messages, parameters, conversationId, stream } = data;
+            console.log("Received chat message:", {
+              model,
+              conversationId,
+              stream,
+              messageCount: messages?.length || 0,
+              parameters
+            });
             
             if (stream) {
               // Use the same stream handling as the generate endpoint
               try {
+                console.log("Starting streaming chat response for conversationId:", conversationId);
                 const streamResponse = await generateContentStream(model, messages, parameters);
+                console.log("Got stream response from Gemini API");
                 
                 // Setup reading the stream
                 const reader = streamResponse.body?.getReader();
                 if (!reader) {
+                  console.error("Failed to get stream reader");
                   ws.send(JSON.stringify({ 
                     type: "error", 
                     error: "Failed to get stream reader" 
@@ -571,8 +584,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { model, prompt, params } = schema.parse(req.body);
       
-      // Format as a single user message
-      const messages = [{ role: 'user' as MessageRole, content: prompt }];
+      // Format as a single user message with safely constructed MessagePart objects
+      const messages = [{
+        role: 'user' as MessageRole,
+        content: prompt.map(p => {
+          // Create a safe MessagePart object directly
+          const partType = ((p.type === 'text' || p.type === 'code' || p.type === 'image') 
+                ? p.type : 'text') as MessagePartType;
+                
+          // Build object with only the properties that exist
+          const messagePart: MessagePart = { type: partType };
+          if (p.text) messagePart.text = p.text;
+          if (p.mimeType) messagePart.mimeType = p.mimeType;
+          if (p.fileData) messagePart.fileData = p.fileData;
+          
+          return messagePart;
+        })
+      }];
       
       // Generate content using Gemini API
       const response = await generateContent(model, messages, params);
@@ -603,8 +631,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const prompt = JSON.parse(promptJson as string);
       const params = JSON.parse(paramsJson as string);
       
-      // Format as a single user message
-      const messages = [{ role: 'user' as MessageRole, content: prompt }];
+      // Format as a single user message with safely constructed MessagePart objects
+      const messages = [{
+        role: 'user' as MessageRole,
+        content: prompt.map((p: any) => {
+          // Create a safe MessagePart object directly
+          const partType = ((p.type === 'text' || p.type === 'code' || p.type === 'image') 
+                ? p.type : 'text') as MessagePartType;
+                
+          // Build object with only the properties that exist
+          const messagePart: MessagePart = { type: partType };
+          if (p.text) messagePart.text = p.text;
+          if (p.mimeType) messagePart.mimeType = p.mimeType;
+          if (p.fileData) messagePart.fileData = p.fileData;
+          
+          return messagePart;
+        })
+      }];
       
       // Set up SSE headers
       res.setHeader('Content-Type', 'text/event-stream');

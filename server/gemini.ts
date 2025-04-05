@@ -209,9 +209,19 @@ export async function generateContentStream(
   // Handle API errors
   if (!response.ok) {
     const errorText = await response.text();
+    console.error(`Gemini API stream error (${response.status}):`, errorText);
     throw new Error(`Gemini API error (${response.status}): ${errorText}`);
   }
 
+  // Ensure response has a body with a readable stream
+  if (!response.body) {
+    console.error("Gemini API response is missing the response body");
+    throw new Error("Gemini API response is missing the response body");
+  }
+
+  // Log successful streaming setup
+  console.log(`Streaming response setup successfully with status ${response.status}`);
+  
   // Return the response for streaming with correct typings
   return response as Response & { body: ReadableStream };
 }

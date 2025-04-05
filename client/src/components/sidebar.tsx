@@ -12,12 +12,18 @@ interface SidebarProps {
 
 export default function Sidebar({ activeTab }: SidebarProps) {
   const { toggleDarkMode, isDarkMode } = useTheme();
-  const { modelConfig, updateModelConfig } = useGeminiContext();
+  const { modelConfig, updateModelConfig, availableModels } = useGeminiContext();
   const { toast } = useToast();
   const { conversations, createConversation, selectedConversation } = useConversationsContext();
   
+  interface ApiStatus {
+    status: string;
+    apiKeyConfigured: boolean;
+    apiKeyMasked?: string;
+  }
+  
   // Query API status
-  const { data: apiStatus } = useQuery({
+  const { data: apiStatus } = useQuery<ApiStatus>({
     queryKey: ['/api/status'],
     retry: false,
   });
@@ -46,20 +52,9 @@ export default function Sidebar({ activeTab }: SidebarProps) {
             value={modelConfig.model}
             onChange={(e) => updateModelConfig({ model: e.target.value })}
           >
-            {/* Gemini 2.5 models */}
-            <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview</option>
-            
-            {/* Gemini 2.0 models */}
-            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-            <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash-Lite</option>
-            
-            {/* Gemini 1.5 models */}
-            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-            <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-            <option value="gemini-1.5-flash-8b">Gemini 1.5 Flash-8B</option>
-            
-            {/* Legacy models */}
-            <option value="gemini-pro">Gemini 1.0 Pro</option>
+            {Object.entries(availableModels).map(([id, name]) => (
+              <option key={id} value={id}>{name}</option>
+            ))}
           </select>
           <span className="material-icons absolute right-2 top-2 text-neutral-500 pointer-events-none">arrow_drop_down</span>
         </div>
@@ -101,10 +96,17 @@ export default function Sidebar({ activeTab }: SidebarProps) {
         <div className="text-xs text-neutral-500 mb-3">
           <div className="flex items-center">
             <span className="font-medium mr-1">API Status:</span>
-            <span className="text-green-500 flex items-center">
-              <span className="material-icons text-xs mr-1">check_circle</span>
-              Active
-            </span>
+            {apiStatus?.apiKeyConfigured ? (
+              <span className="text-green-500 flex items-center">
+                <span className="material-icons text-xs mr-1">check_circle</span>
+                Active
+              </span>
+            ) : (
+              <span className="text-red-500 flex items-center">
+                <span className="material-icons text-xs mr-1">error</span>
+                Missing
+              </span>
+            )}
           </div>
         </div>
         

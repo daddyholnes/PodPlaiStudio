@@ -3,10 +3,21 @@ import { ModelParameters } from '@shared/schema';
 
 // Define available Gemini models
 export const GEMINI_MODELS = {
-  'gemini-1.0-pro': 'Gemini 1.0 Pro',
-  'gemini-1.5-pro': 'Gemini 1.5 Pro',
-  'gemini-1.5-flash': 'Gemini 1.5 Flash',
+  // Gemini 2.5 models
   'gemini-2.5-pro-preview-03-25': 'Gemini 2.5 Pro (Preview)',
+  
+  // Gemini 2.0 models
+  'gemini-2.0-flash': 'Gemini 2.0 Flash',
+  'gemini-2.0-flash-lite': 'Gemini 2.0 Flash-Lite',
+  
+  // Gemini 1.5 models
+  'gemini-1.5-flash': 'Gemini 1.5 Flash',
+  'gemini-1.5-flash-8b': 'Gemini 1.5 Flash-8B',
+  'gemini-1.5-pro': 'Gemini 1.5 Pro',
+  
+  // Legacy models
+  'gemini-pro': 'Gemini 1.0 Pro',
+  'gemini-1.0-pro': 'Gemini 1.0 Pro (Legacy)',
 };
 
 // Model config includes the selected model and its parameters
