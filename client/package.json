@@ -1,0 +1,32 @@
+{
+  "name": "client",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@livekit/components-react": "^1.2.0",
+    "@livekit/components-styles": "^1.0.6",
+    "@monaco-editor/react": "^4.5.1",
+    "@xterm/addon-fit": "^0.9.0",
+    "@xterm/addon-web-links": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
+    "axios": "^1.4.0",
+    "monaco-editor": "^0.40.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^4.10.1",
+    "react-virtualized": "^9.22.5",
+    "socket.io-client": "^4.7.1",
+    "styled-components": "^6.0.5"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.0.3",
+    "vite": "^4.4.5"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  }
+}

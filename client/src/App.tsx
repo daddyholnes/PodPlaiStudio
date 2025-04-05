@@ -7,6 +7,7 @@ import ChatView from "@/components/chat-view";
 import GenerateView from "@/components/generate-view";
 import CodeView from "@/components/code-view";
 import LiveApiView from "@/components/live-api-view";
+import ReplicodeView from "@/components/ReplicodeView";
 import ConfigPanel from "@/components/config-panel";
 import ErrorBoundary from "@/components/error-boundary";
 import { ThemeProvider } from "@/contexts/theme-context";
@@ -14,7 +15,7 @@ import { GeminiProvider } from "@/contexts/gemini-context";
 import { ConversationsProvider } from "@/contexts/conversations-context";
 
 function MainLayout() {
-  const [activeTab, setActiveTab] = useState<'chat' | 'generate' | 'code' | 'liveapi'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'generate' | 'code' | 'liveapi' | 'replicode'>('chat');
 
   // Handle tab change events from sidebar
   useEffect(() => {
@@ -45,6 +46,7 @@ function MainLayout() {
               {activeTab === 'generate' && <GenerateView />}
               {activeTab === 'code' && <CodeView />}
               {activeTab === 'liveapi' && <LiveApiView />}
+              {activeTab === 'replicode' && <ReplicodeView />}
             </ErrorBoundary>
           </div>
           

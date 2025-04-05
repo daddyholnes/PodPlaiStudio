@@ -7,7 +7,7 @@ import { useConversationsContext } from '@/contexts/conversations-context';
 import ConversationsList from './conversations-list';
 
 interface SidebarProps {
-  activeTab: 'chat' | 'generate' | 'code' | 'liveapi';
+  activeTab: 'chat' | 'generate' | 'code' | 'liveapi' | 'replicode';
 }
 
 export default function Sidebar({ activeTab }: SidebarProps) {
@@ -80,6 +80,18 @@ export default function Sidebar({ activeTab }: SidebarProps) {
           >
             <span className="material-icons mb-1">code</span>
             <span className="text-xs font-medium">Code</span>
+          </button>
+          
+          <button 
+            onClick={() => window.dispatchEvent(new CustomEvent('change-tab', { detail: 'replicode' }))}
+            className={`w-full py-3 flex flex-col items-center justify-center ${
+              activeTab === 'replicode' 
+                ? 'text-primary border-l-4 border-primary' 
+                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+            }`}
+          >
+            <span className="material-icons mb-1">terminal</span>
+            <span className="text-xs font-medium">Replicode</span>
           </button>
           
           <button 

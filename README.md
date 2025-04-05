@@ -1,6 +1,6 @@
-# PodPlay API Studio
+# PodPlai Studio
 
-A comprehensive locally-hosted interface for interacting with Google's Gemini AI models, inspired by Google AI Studio but with enhanced capabilities and a streamlined UI.
+An AI Studio with LiveKit integration and sandbox enhancements, featuring real-time video chat, code editing, and terminal functionality.
 
 ![PodPlay API Studio](generated-icon.png)
 
@@ -30,7 +30,28 @@ PodPlay API Studio provides a robust interface for interacting with Google's Gem
 - **API Status Monitoring**: Clear indication of API connectivity
 - **Responsive Design**: Optimized for various screen sizes
 
+- LiveKit integration for real-time video/audio chat
+- Monaco Editor for code editing
+- Terminal emulation
+- File explorer for project management
+- Chat functionality with Gemini AI
+
 ## Installation
+
+Before running the project, you'll need to ensure you have Node.js installed (v18 or newer recommended).
+
+```bash
+# Clean installation (recommended if you encounter issues)
+npm run clean # Removes node_modules folders if script is available
+# OR manually remove node_modules folders:
+# rm -rf node_modules client/node_modules server/node_modules
+
+# Install dependencies
+npm install
+
+# Note: The terminal functionality is now implemented as a pure JavaScript simulation
+# without requiring any native dependencies
+```
 
 ### Prerequisites
 
@@ -55,10 +76,13 @@ npm install
 
 3. **Set up environment variables**
 
-Create a `.env` file in the root directory and add your Gemini API key:
+Create a `.env` file in the root directory with:
 
 ```
-GEMINI_API_KEY=your_api_key_here
+LIVEKIT_API_KEY=devkey
+LIVEKIT_API_SECRET=secret
+LIVEKIT_SERVER_URL=ws://localhost:7880
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 4. **Start the development server**
@@ -70,6 +94,24 @@ npm run dev
 5. **Access the application**
 
 Open your browser and navigate to `http://localhost:5000`
+
+## Development
+
+```bash
+# Start both client and server in development mode
+npm run dev
+
+# Or start them individually
+npm run dev:client
+npm run dev:server
+```
+
+## Building for Production
+
+```bash
+# Build the client
+npm run build
+```
 
 ## Usage Guide
 
@@ -108,6 +150,18 @@ Open your browser and navigate to `http://localhost:5000`
 
 ## Troubleshooting
 
+If you encounter installation issues:
+
+1. **Terminal Functionality**: The terminal is implemented in pure JavaScript without native dependencies.
+
+2. **WebSocket Connection Issues**: Check your firewall settings and ensure the WebSocket server can run on the specified port.
+
+3. **Package Conflicts**: Try cleaning node_modules folders before installation.
+
+4. **Missing Environment Variables**: Ensure all environment variables are properly set in your .env file.
+
+5. **Xterm Dependency Warnings**: We've updated to newer @xterm/* packages to resolve deprecation warnings.
+
 ### API Key Issues
 
 - Ensure your GEMINI_API_KEY is correctly set in the environment
@@ -123,4 +177,24 @@ Open your browser and navigate to `http://localhost:5000`
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Project Structure
+
+```
+PodPlaiStudio/
+├── client/               # React frontend
+│   ├── src/
+│   │   ├── components/   # UI components
+│   │   ├── contexts/     # React contexts
+│   │   ├── hooks/        # Custom hooks
+│   │   ├── lib/          # Utility functions
+│   │   └── services/     # API service functions
+│   └── public/           # Static assets
+├── server/               # Express backend
+│   ├── src/
+│   │   ├── routes/       # API route handlers
+│   │   └── services/     # Server-side services
+│   └── ...
+└── shared/               # Shared types and utilities
+```
 
