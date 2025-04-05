@@ -109,8 +109,9 @@ export default function Sidebar({ activeTab }: SidebarProps) {
       {/* Sidebar Panel */}
       <div className="w-64 border-r border-neutral-300 dark:border-neutral-700 flex flex-col flex-shrink-0 h-full bg-white dark:bg-neutral-900">
         {/* Header */}
-        <div className="flex items-center p-4 border-b border-neutral-300 dark:border-neutral-800">
+        <div className="flex flex-col p-4 border-b border-neutral-300 dark:border-neutral-800">
           <h1 className="font-google-sans text-xl font-medium">PodPlay API Studio</h1>
+          <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">Using {availableModels[modelConfig.model]}</p>
         </div>
         
         {/* Model Selection Section */}

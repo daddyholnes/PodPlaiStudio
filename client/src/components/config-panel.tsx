@@ -33,20 +33,6 @@ export default function ConfigPanel() {
       
       <div className="flex-grow overflow-y-auto">
         <div className="p-4 space-y-6">
-          {/* Model Selection */}
-          <div>
-            <label className="text-sm font-medium block mb-2">Model</label>
-            <select
-              className="w-full border border-neutral-300 dark:border-neutral-700 rounded-lg p-2 bg-white dark:bg-neutral-900 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary focus:border-transparent"
-              value={modelConfig.model}
-              onChange={(e) => updateModelConfig({ model: e.target.value })}
-            >
-              {Object.entries(availableModels).map(([id, name]) => (
-                <option key={id} value={id}>{name}</option>
-              ))}
-            </select>
-          </div>
-
           {/* Temperature */}
           <div>
             <div className="flex justify-between mb-2">
