@@ -1,0 +1,79 @@
+Multimodal Live API
+LiveKit's Google plugin includes a RealtimeModel class that allows you to use Google's Multimodal Live API. The Multimodal Live API enables low-latency, two-way interactions that use text, audio, and video input, with audio and text output. Use LiveKit's Google integration with the Agents framework to create agents with natural, human-like voice conversations.
+
+RealtimeModel usage
+Create a model using the Multimodal Live API for use in a 
+MultimodalAgent
+:
+
+from livekit.plugins import google
+
+model=google.beta.realtime.RealtimeModel(
+    voice="Puck",
+    temperature=0.8,
+    instructions="You are a helpful assistant",
+),
+Copy
+For a full agent example, see the Gemini example in the LiveKit Agents GitHub repository.
+
+RealtimeModel parameters
+This section describes some of the available parameters. For a complete reference of all available parameters, see the plugin reference.
+
+instructions
+string
+Optional
+System instructions to better control the model's output and specify tone and sentiment of responses. To learn more, see System instructions.
+
+model
+LiveAPIModels | string
+Required
+Default:
+gemini-2.0-flash-exp
+Live API model to use.
+
+api_key
+string
+Required
+Env:
+GOOGLE_API_KEY
+Google Gemini API key.
+
+voice
+Voice | string
+Required
+Default:
+Puck
+Name of the Multimodal Live voice. For a full list, see Voices.
+
+modalities
+list[Modality]
+Optional
+Default:
+["AUDIO"]
+List of modalities to use, such as ["TEXT", "AUDIO"].
+
+vertexai
+boolean
+Required
+Default:
+False
+If set to true, use Vertex AI.
+
+project
+string
+Optional
+Env:
+GOOGLE_CLOUD_PROJECT
+Google Cloud project ID to use for the API (if vertextai=True). By default, the project is inferred from the service account key file (set using the GOOGLE_APPLICATION_CREDENTIALS environment variable).
+
+location
+string
+Optional
+Env:
+GOOGLE_CLOUD_LOCATION
+Google Cloud location to use for the API (if vertextai=True). By default, the project is inferred from the service account key file and the location defaults to us-central1.
+
+temperature
+float
+Optional
+A measure of randomness of completions. A lower temperature is more deterministic. To learn more, see Temperature.

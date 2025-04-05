@@ -24,9 +24,9 @@ import { z } from "zod";
 declare module "ws" {
   interface WebSocket {
     isAlive: boolean;
+    clientId: string;
   }
 }
-import { z } from "zod";
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(process.cwd(), "uploads");
@@ -79,35 +79,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up ping interval to keep connections alive
   const pingInterval = setInterval(() => {
+    let disconnectedClients = 0;
+    
     wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
+      if (client.isAlive === false) {
+        disconnectedClients++;
+        // If a client didn't respond to the previous ping, terminate it
+        client.terminate();
+        return;
+      }
+      
+      // Mark the client as not alive, it will be marked as alive when it responds to ping
+      client.isAlive = false;
+      
+      // Use WebSocket standard ping
+      try {
         client.ping();
-        console.log('Ping sent to client');
+      } catch (err) {
+        console.error('Error sending ping:', err);
+      }
+      
+      // Also send a JSON ping message for clients that may not support WebSocket ping/pong
+      try {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
+        }
+      } catch (err) {
+        console.error('Error sending JSON ping:', err);
       }
     });
-  }, 30000); // Ping every 30 seconds
+    
+    if (disconnectedClients > 0) {
+      console.log(`Terminated ${disconnectedClients} non-responsive clients`);
+    }
+  }, 20000); // Ping interval: 20 seconds
+  
+  // Generate a unique ID for each client
+  let clientIdCounter = 0;
   
   // Handle WebSocket connections
   wss.on('connection', (ws, req) => {
-    console.log('Client connected to WebSocket', req.headers['user-agent']);
-    
-    // Set a timeout for the socket
+    // Assign a unique client ID and track connection state
+    const clientId = `client_${Date.now()}_${++clientIdCounter}`;
+    ws.clientId = clientId;
     ws.isAlive = true;
     
-    // Handle pong messages
+    console.log(`Client connected to WebSocket (ID: ${clientId})`);
+    
+    // Handle standard WebSocket ping-pong
     ws.on('pong', () => {
       ws.isAlive = true;
-      console.log('Received pong from client');
+    });
+    
+    // Handle close event
+    ws.on('close', () => {
+      console.log(`Client disconnected from WebSocket (ID: ${clientId})`);
+    });
+    
+    // Handle error event
+    ws.on('error', (error) => {
+      console.error(`WebSocket error for client ${clientId}:`, error);
     });
     
     ws.on('message', async (message) => {
       try {
-        // Parse the message
+        // Try to parse as JSON
         const data = JSON.parse(message.toString());
-        console.log('WebSocket message received:', data.type, data.conversationId || '');
         
-        // Reset the alive flag on any message
+        // Handle custom ping/pong messages for clients that don't support WebSocket ping
+        if (data.type === 'ping') {
+          ws.isAlive = true;
+          ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now(), echo: data.timestamp }));
+          return;
+        }
+        
+        // Mark the client as alive on any message
         ws.isAlive = true;
+        
+        console.log('WebSocket message received:', data.type, data.conversationId || '');
         
         // Handle different message types
         switch (data.type) {
