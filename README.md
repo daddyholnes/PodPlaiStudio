@@ -124,6 +124,17 @@ Open your browser and navigate to `http://localhost:5000`
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+## For Developers
+
+The project includes comprehensive documentation for developers who want to maintain or extend the application:
+
+- **UI_DESIGN_GUIDE.md**: Detailed guide on design system, layout principles, and styling approach
+- **UI_COMPONENT_REFERENCE.md**: Quick reference for component hierarchy and usage examples
+- **COLOR_PALETTE_REFERENCE.md**: Color system documentation with Tailwind class examples
+- **ADDING_NEW_FEATURES.md**: Step-by-step guide for adding new tabs and features
+
+These documents ensure consistent implementation of the Google AI Studio-inspired interface across future development.
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
