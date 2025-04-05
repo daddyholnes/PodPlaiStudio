@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyAI Studio</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap">
+</head>
+<body>
+  <div class="app-container">
+    <nav class="sidebar">
+      <div class="logo">MyAI Studio</div>
+      <ul class="nav-items">
+        <li class="nav-item" data-page="chat">
+          <span class="icon">💬</span>
+          <span>Chat</span>
+        </li>
+        <li class="nav-item" data-page="sandbox">
+          <span class="icon">🧪</span>
+          <span>Sandbox</span>
+        </li>
+        <!-- Add new Build page navigation item -->
+        <li class="nav-item" data-page="build">
+          <span class="icon">🏗️</span>
+          <span>Build</span>
+        </li>
+        <li class="nav-item" data-page="api">
+          <span class="icon">🔌</span>
+          <span>LiveAPI</span>
+        </li>
+        <li class="nav-item" data-page="settings">
+          <span class="icon">⚙️</span>
+          <span>Settings</span>
+        </li>
+      </ul>
+    </nav>
+    
+    <main class="content">
+      <!-- Chat Page with history sidebar -->
+      <div class="page hidden" id="chat-page">
+        <div class="two-column-layout">
+          <div class="sidebar-panel">
+            <div class="action-bar">
+              <button class="action-button primary" id="new-chat">
+                <span>+</span> New Chat
+              </button>
+            </div>
+            <div id="chat-sessions" class="sessions-list">
+              <!-- Chat sessions will be populated here -->
+            </div>
+          </div>
+          
+          <div class="main-panel">
+            <div class="chat-container">
+              <div class="model-selector-container">
+                <label for="model-selector">Model:</label>
+                <select id="model-selector">
+                  <!-- Updated with current Gemini model names -->
+                  <optgroup label="Gemini API (API Key)">
+                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                    <option value="gemini-1.0-pro">Gemini 1.0 Pro</option>
+                    <option value="gemini-1.0-pro-vision">Gemini 1.0 Pro Vision</option>
+                  </optgroup>
+                  <optgroup label="Vertex AI Models">
+                    <option value="vertex-gemini-1.5-pro">Vertex AI - Gemini 1.5 Pro</option>
+                    <option value="vertex-gemini-1.5-flash">Vertex AI - Gemini 1.5 Flash</option>
+                    <option value="vertex-gemini-1.0-pro">Vertex AI - Gemini 1.0 Pro</option>
+                    <option value="vertex-gemini-1.0-pro-vision">Vertex AI - Gemini 1.0 Pro Vision</option>
+                    <option value="vertex-claude-3-opus">Vertex AI - Claude 3 Opus</option>
+                    <option value="vertex-claude-3-sonnet">Vertex AI - Claude 3 Sonnet</option>
+                    <option value="vertex-claude-3-haiku">Vertex AI - Claude 3 Haiku</option>
+                    <option value="vertex-palm-2">Vertex AI - PaLM 2</option>
+                    <option value="vertex-llama3">Vertex AI - Llama 3</option>
+                  </optgroup>
+                  <option value="custom">Custom Endpoint</option>
+                </select>
+                <div id="custom-endpoint-container" class="hidden">
+                  <input type="text" id="custom-endpoint" placeholder="Custom API Endpoint">
+                </div>
+              </div>
+              <div class="chat-messages" id="chat-messages"></div>
+              <div class="chat-input-container">
+                <textarea 
+                  id="chat-input" 
+                  placeholder="Ask something..."
+                  rows="3"
+                ></textarea>
+                <button id="send-button">Send</button>
+              </div>
+              <div class="chat-actions">
+                <button id="clear-chat">Clear Conversation</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sandbox Page -->
+      <div class="page hidden" id="sandbox-page">
+        <div class="sandbox-container">
+          <div class="code-editor">
+            <h3>Code Editor</h3>
+            <textarea 
+              id="code-editor" 
+              placeholder="# Write your Python code here"
+              rows="15"
+            ></textarea>
+            <button id="run-code">Run Code</button>
+          </div>
+          <div class="terminal">
+            <h3>Terminal Output</h3>
+            <div class="terminal-output" id="terminal-output"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Build Page - New Genkit and UV Integration -->
+      <div class="page hidden" id="build-page">
+        <h2>Build AI Applications</h2>
+        <p class="page-description">Create and deploy AI applications using Genkit and manage Python packages with UV</p>
+        
+        <!-- Genkit Projects -->
+        <div class="genkit-container">
+          <div class="genkit-header">
+            <div class="genkit-title">Genkit Projects</div>
+            <div class="genkit-badge">Firebase</div>
+          </div>
+          
+          <div class="genkit-options">
+            <div class="genkit-option">
+              <div class="genkit-option-header">
+                <div class="genkit-option-title">Create New Project</div>
+              </div>
+              <div class="genkit-option-desc">Start a new Genkit project from scratch or using a template.</div>
+              <div class="genkit-actions">
+                <button class="genkit-button" id="genkit-new-blank">Blank Project</button>
+                <button class="genkit-button" id="genkit-new-template">From Template</button>
+              </div>
+            </div>
+            
+            <div class="genkit-option">
+              <div class="genkit-option-header">
+                <div class="genkit-option-title">Open Existing Project</div>
+              </div>
+              <div class="genkit-option-desc">Open and work with an existing Genkit project.</div>
+              <div class="genkit-actions">
+                <button class="genkit-button" id="genkit-open">Browse Projects</button>
+              </div>
+            </div>
+          </div>
+          
+          <div id="genkit-recent-projects" class="genkit-recent">
+            <!-- Recent projects will be dynamically populated -->
+          </div>
+        </div>
+        
+        <!-- UV Package Manager -->
+        <div class="uv-manager">
+          <div class="uv-header">
+            <div class="genkit-title">UV Package Manager</div>
+            <button class="genkit-button" id="uv-check-install">Check Installation</button>
+          </div>
+          
+          <div id="uv-status" class="gcloud-status pending">Checking UV installation...</div>
+          
+          <div id="uv-controls" class="hidden">
+            <div class="uv-package-form">
+              <input type="text" class="uv-package-input" id="uv-package-name" placeholder="Enter package name (e.g., numpy, pandas)">
+              <button class="genkit-button primary" id="uv-install-package">Install</button>
+            </div>
+            
+            <div class="uv-packages" id="uv-installed-packages">
+              <!-- Installed packages will be listed here -->
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- LiveAPI Page (PodPlayStudio style) -->
+      <div class="page hidden" id="api-page">
+        <div class="pod-container">
+          <div class="pod-header">
+            <h1 class="pod-title">PodPlay LiveAPI</h1>
+            <p class="pod-description">
+              Access Gemini models directly via the API using the configuration settings from this interface.
+              Below are code examples to help you get started.
+            </p>
+          </div>
+          
+          <!-- API Reference -->
+          <div class="pod-card">
+            <div class="pod-card-header">
+              <h2 class="pod-card-title">API Reference</h2>
+            </div>
+            <div class="pod-card-content">
+              <h3 class="pod-subtitle">API Endpoint</h3>
+              <div class="code-display" id="api-endpoint-display"></div>
+              
+              <h3 class="pod-subtitle">Current Configuration</h3>
+              <div class="code-display" id="config-display"></div>
+              
+              <div class="pod-link-container">
+                <a 
+                  href="https://ai.google.dev/api/rest" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  class="pod-link"
+                >
+                  View full API documentation
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Code Examples -->
+          <div class="pod-card">
+            <div class="pod-card-header">
+              <h2 class="pod-card-title">Code Examples</h2>
+            </div>
+            <div class="pod-card-tabs">
+              <div class="pod-tabs">
+                <button class="pod-tab active" id="node-tab">Node.js</button>
+                <button class="pod-tab" id="python-tab">Python</button>
+                <button class="pod-tab" id="curl-tab">cURL</button>
+              </div>
+            </div>
+            <div class="pod-card-content">
+              <div class="code-display" id="code-example-display"></div>
+            </div>
+          </div>
+          
+          <!-- Implementation Notes -->
+          <div class="pod-card">
+            <div class="pod-card-header">
+              <h2 class="pod-card-title">Implementation Notes</h2>
+            </div>
+            <div class="pod-card-content">
+              <ul class="pod-list">
+                <li>
+                  Replace <code class="inline-code">process.env.GEMINI_API_KEY</code> with your actual API key.
+                </li>
+                <li>
+                  For streaming responses, use the <code class="inline-code">streamGenerateContent</code> endpoint.
+                </li>
+                <li>
+                  Make sure to handle API rate limits and errors appropriately in your implementation.
+                </li>
+                <li>
+                  For multimodal inputs (like images), you'll need to encode the file as base64 and include it in the request.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Settings Page -->
+      <div class="page hidden" id="settings-page">
+        <div class="settings-container">
+          <h2>Settings</h2>
+          
+          <!-- Authentication Settings -->
+          <div class="setting-item">
+            <label>Authentication Method</label>
+            <div class="auth-method-container">
+              <div class="auth-method-selector">
+                <select id="auth-method">
+                  <option value="api-key">API Key</option>
+                  <option value="adc">Application Default Credentials (ADC)</option>
+                  <option value="service-account">Service Account Key</option>
+                  <option value="gcloud-cli">gcloud CLI (Recommended)</option>
+                </select>
+              </div>
+              
+              <div id="api-key-fields" class="auth-method-fields">
+                <label for="gemini-api-key">Gemini API Key</label>
+                <input type="password" id="gemini-api-key" placeholder="Enter your Gemini API key">
+                <p class="setting-help">If not provided, uses GEMINI_API_KEY from environment variables</p>
+              </div>
+              
+              <div id="adc-fields" class="auth-method-fields hidden">
+                <p class="auth-help-text">
+                  Using Application Default Credentials. Ensure you've run:<br>
+                  <code>gcloud auth application-default login</code><br>
+                  Or set the GOOGLE_APPLICATION_CREDENTIALS environment variable to point to your credentials file.
+                </p>
+              </div>
+              
+              <div id="service-account-fields" class="auth-method-fields hidden">
+                <label for="service-account-path">Service Account Key Path</label>
+                <input type="text" id="service-account-path" placeholder="Path to service account key JSON file">
+                <p class="setting-help">Full path to your service account key file (not recommended for production)</p>
+              </div>
+
+              <div id="gcloud-cli-fields" class="auth-method-fields hidden">
+                <div class="gcloud-info">
+                  <div class="gcloud-info-row">
+                    <span class="gcloud-label">Project:</span>
+                    <span id="gcloud-project-display">camera-calibration-beta</span>
+                  </div>
+                  <div class="gcloud-info-row">
+                    <span class="gcloud-label">Account:</span>
+                    <span id="gcloud-email-display">woodyholne@gmail.com</span>
+                  </div>
+                  <div class="gcloud-status-row">
+                    <span id="gcloud-auth-status" class="gcloud-status pending">Checking authentication...</span>
+                    <button id="refresh-gcloud-auth" class="small-button">Refresh</button>
+                  </div>
+                </div>
+                <p class="auth-help-text">
+                  Using gcloud CLI for authentication. Your current project is set to <strong>camera-calibration-beta</strong>.<br>
+                  To change projects, run:<br>
+                  <code>gcloud config set project YOUR_PROJECT_ID</code>
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="setting-item">
+            <label for="vertex-project">Google Cloud Project ID</label>
+            <input type="text" id="vertex-project" placeholder="Enter your Google Cloud Project ID">
+            <p class="setting-help">Required when using Vertex AI models</p>
+          </div>
+          
+          <div class="setting-item">
+            <label for="vertex-location">Vertex AI Location</label>
+            <input type="text" id="vertex-location" value="us-central1">
+            <p class="setting-help">The region for your Vertex AI endpoints (e.g., us-central1)</p>
+          </div>
+          
+          <!-- Vertex AI Verification Section -->
+          <div class="setting-item">
+            <label>Vertex AI Authentication Verification</label>
+            <div class="settings-verification">
+              <button id="verify-permissions">Verify IAM Permissions</button>
+              <button id="test-endpoint">Test Endpoint Connection</button>
+            </div>
+            <div id="verification-results" class="verification-results hidden">
+              <div class="verification-status"></div>
+              <pre class="verification-details"></pre>
+            </div>
+          </div>
+          
+          <div class="setting-item">
+            <label>API Control</label>
+            <div class="settings-controls">
+              <button id="save-settings">Save Settings</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <!-- Template Selection Modal (hidden by default) -->
+  <div id="template-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Select a Genkit Template</div>
+        <button class="modal-close" id="close-template-modal">×</button>
+      </div>
+      
+      <div class="template-grid">
+        <div class="template-card" data-template="chatbot">
+          <div class="template-title">Simple Chatbot</div>
+          <div class="template-desc">Basic chatbot with conversation history</div>
+        </div>
+        
+        <div class="template-card" data-template="ai-barista">
+          <div class="template-title">AI Barista</div>
+          <div class="template-desc">Coffee ordering assistant demo</div>
+        </div>
+        
+        <div class="template-card" data-template="rag">
+          <div class="template-title">RAG Application</div>
+          <div class="template-desc">Retrieval-augmented generation with your data</div>
+        </div>
+        
+        <div class="template-card" data-template="restaurant-menu">
+          <div class="template-title">Restaurant Menu Q&A</div>
+          <div class="template-desc">Answer questions about menu items</div>
+        </div>
+        
+        <div class="template-card" data-template="school-agent">
+          <div class="template-title">School Assistant</div>
+          <div class="template-desc">Routing agent with specialized assistants</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Code highlighting library for LiveAPI page -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css">
+  
+  <script>
+    // Enable DevTools for debugging
+    document.addEventListener('keydown', function(e) {
+      if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+        require('electron').ipcRenderer.send('toggle-dev-tools');
+      }
+    });
+  </script>
+  <script src="renderer.js"></script>
+</body>
+</html>
