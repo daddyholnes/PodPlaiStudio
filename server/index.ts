@@ -1,10 +1,29 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { validateConfig, GEMINI_API_KEY } from "./config";
+import os from "os";
 
-// Debug environment variables
-console.log("GEMINI_API_KEY exists:", !!process.env.GEMINI_API_KEY);
-console.log("Environment variables:", Object.keys(process.env).filter(key => !key.includes('KEY') && !key.includes('TOKEN')));
+// Debug environment variables and API key check
+console.log("===================== ENVIRONMENT VERIFICATION =====================");
+console.log("Node.js process.env.GEMINI_API_KEY exists:", !!process.env.GEMINI_API_KEY);
+console.log("GEMINI_API_KEY value:", GEMINI_API_KEY ? `${GEMINI_API_KEY.substring(0, 4)}...` : "Not found");
+console.log("GEMINI_API_KEY length:", GEMINI_API_KEY?.length || 0);
+
+// Try alternative ways to access environment variables
+try {
+  const envVars = Object.keys(process.env).filter(key => !key.includes('KEY') && !key.includes('TOKEN'));
+  console.log("Available environment variables:", envVars.join(", "));
+  
+  if (process.env.GEMINI_API_KEY) {
+    console.log("API key successfully loaded from process.env");
+  } else {
+    console.log("API key not found in process.env");
+  }
+} catch (error) {
+  console.error("Error accessing environment variables:", error);
+}
+console.log("===================================================================");
 
 const app = express();
 app.use(express.json());

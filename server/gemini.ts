@@ -1,6 +1,6 @@
-import { ModelParametersSchema, type MessagePart, type MessageRole } from "@shared/schema";
+import { ModelParametersSchema, type MessagePart, type MessageRole, GEMINI_MODELS, type GeminiModelId } from "@shared/schema";
 import fetch, { Response } from "node-fetch";
-import { GEMINI_API_KEY, GEMINI_API_BASE_URL, GEMINI_MODELS, DEFAULT_MODEL, validateConfig } from "./config";
+import { GEMINI_API_KEY, GEMINI_API_BASE_URL, DEFAULT_MODEL, validateConfig } from "./config";
 
 // Add ReadableStream type augmentation to make TypeScript support getReader()
 declare global {
@@ -87,7 +87,11 @@ export async function generateContent(
   const validatedParams = ModelParametersSchema.parse(parameters);
 
   // Get the correct model path
-  const modelPath = GEMINI_MODELS[model as keyof typeof GEMINI_MODELS] || GEMINI_MODELS[DEFAULT_MODEL];
+  const modelId = model as GeminiModelId;
+  const fallbackId = DEFAULT_MODEL as GeminiModelId;
+  const modelPath = (modelId in GEMINI_MODELS) 
+    ? GEMINI_MODELS[modelId].apiPath 
+    : GEMINI_MODELS[fallbackId].apiPath;
 
   // Convert messages to Gemini format
   const geminiMessages = convertToGeminiMessages(messages);
@@ -141,7 +145,11 @@ export async function generateContentStream(
   const validatedParams = ModelParametersSchema.parse(parameters);
 
   // Get the correct model path
-  const modelPath = GEMINI_MODELS[model as keyof typeof GEMINI_MODELS] || GEMINI_MODELS[DEFAULT_MODEL];
+  const modelId = model as GeminiModelId;
+  const fallbackId = DEFAULT_MODEL as GeminiModelId;
+  const modelPath = (modelId in GEMINI_MODELS) 
+    ? GEMINI_MODELS[modelId].apiPath 
+    : GEMINI_MODELS[fallbackId].apiPath;
 
   // Convert messages to Gemini format
   const geminiMessages = convertToGeminiMessages(messages);

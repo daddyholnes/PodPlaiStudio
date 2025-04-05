@@ -6,7 +6,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { generateContent, generateContentStream, countTokens } from "./gemini";
-import { isApiKeyConfigured, getMaskedApiKey } from "./config";
+import { isApiKeyConfigured, getMaskedApiKey, GEMINI_API_KEY, validateConfig } from "./config";
 import { 
   MessageRoleEnum, 
   MessageRole,
@@ -427,10 +427,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get API status and check if API key is configured
   app.get('/api/status', (req, res) => {
+    // Run validation check with detailed logging
+    validateConfig();
+    
     res.json({ 
       status: 'ok', 
       apiKeyConfigured: isApiKeyConfigured,
-      apiKeyMasked: isApiKeyConfigured ? getMaskedApiKey() : undefined
+      apiKeyMasked: isApiKeyConfigured ? getMaskedApiKey() : undefined,
+      apiKeyLength: GEMINI_API_KEY.length,
+      apiKeyFirstChars: GEMINI_API_KEY ? GEMINI_API_KEY.substring(0, 4) + '...' : 'None'
+    });
+  });
+  
+  // Debug endpoint for API key verification
+  app.get('/api/debug/env', (req, res) => {
+    res.json({
+      envCheck: {
+        hasApiKey: !!GEMINI_API_KEY,
+        apiKeyLength: GEMINI_API_KEY?.length || 0,
+        apiKeyFirstChars: GEMINI_API_KEY ? GEMINI_API_KEY.substring(0, 4) + '...' : 'None',
+        validationResult: validateConfig(),
+        processEnvKeys: Object.keys(process.env)
+          .filter(key => !key.includes('KEY') && !key.includes('TOKEN'))
+      }
     });
   });
   

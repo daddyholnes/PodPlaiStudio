@@ -71,6 +71,70 @@ export const insertMessageSchema = createInsertSchema(messages).pick({
   content: true,
 });
 
+// Define Gemini models
+export const GEMINI_MODELS = {
+  // Gemini 2.5 models
+  "gemini-2.5-pro-preview-03-25": {
+    apiPath: "models/gemini-2.5-pro-preview-03-25",
+    displayName: "Gemini 2.5 Pro (Preview)",
+    description: "Enhanced thinking and reasoning"
+  },
+  
+  // Gemini 2.0 models
+  "gemini-2.0-flash": {
+    apiPath: "models/gemini-2.0-flash",
+    displayName: "Gemini 2.0 Flash",
+    description: "Next generation features, speed, thinking"
+  },
+  "gemini-2.0-flash-lite": {
+    apiPath: "models/gemini-2.0-flash-lite",
+    displayName: "Gemini 2.0 Flash-Lite",
+    description: "Cost efficiency and low latency"
+  },
+  
+  // Gemini 1.5 models
+  "gemini-1.5-flash": {
+    apiPath: "models/gemini-1.5-flash",
+    displayName: "Gemini 1.5 Flash",
+    description: "Fast and versatile performance"
+  },
+  "gemini-1.5-flash-8b": {
+    apiPath: "models/gemini-1.5-flash-8b",
+    displayName: "Gemini 1.5 Flash-8B",
+    description: "High volume and lower intelligence tasks"
+  },
+  "gemini-1.5-pro": {
+    apiPath: "models/gemini-1.5-pro",
+    displayName: "Gemini 1.5 Pro",
+    description: "Complex reasoning tasks requiring more intelligence"
+  },
+  
+  // Legacy models
+  "gemini-pro": {
+    apiPath: "models/gemini-pro",
+    displayName: "Gemini 1.0 Pro",
+    description: "Legacy model"
+  },
+  "gemini-1.0-pro": {
+    apiPath: "models/gemini-pro",
+    displayName: "Gemini 1.0 Pro (Legacy)",
+    description: "Legacy name mapping"
+  },
+
+  // Embeddings
+  "gemini-embedding-exp": {
+    apiPath: "models/gemini-embedding-exp",
+    displayName: "Gemini Embedding",
+    description: "Text embeddings"
+  },
+};
+
+// Default model ID
+export const DEFAULT_MODEL_ID = "gemini-2.5-pro-preview-03-25";
+
+// Helper type for model ID
+export type GeminiModelId = keyof typeof GEMINI_MODELS;
+
 // Define model parameters
 export const ModelParametersSchema = z.object({
   temperature: z.number().min(0).max(1).default(0.7),

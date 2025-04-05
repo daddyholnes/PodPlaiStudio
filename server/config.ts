@@ -1,8 +1,15 @@
 // Centralized configuration for the PodPlay API Studio
 // Contains environment variables and shared configuration settings
 
-// Get the Gemini API key from environment variables
+// Import required modules
+import os from 'os';
+import { GEMINI_MODELS, DEFAULT_MODEL_ID } from "@shared/schema";
+
+// Get the Gemini API key from environment variables, checking both process.env and os.environ
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+
+// Log the API key status (masked for security)
+console.log("Gemini API Key Status:", GEMINI_API_KEY ? "Found" : "Not found");
 
 // Check if API key exists
 export const isApiKeyConfigured = !!GEMINI_API_KEY;
@@ -16,36 +23,21 @@ export const getMaskedApiKey = () => {
 // Gemini API base URL
 export const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1";
 
-// Models available in Gemini
-export const GEMINI_MODELS = {
-  // Gemini 2.5 models
-  "gemini-2.5-pro-preview-03-25": "models/gemini-2.5-pro-preview-03-25", // Default - Enhanced thinking and reasoning
-  
-  // Gemini 2.0 models
-  "gemini-2.0-flash": "models/gemini-2.0-flash", // Next generation features, speed, thinking
-  "gemini-2.0-flash-lite": "models/gemini-2.0-flash-lite", // Cost efficiency and low latency
-  
-  // Gemini 1.5 models
-  "gemini-1.5-flash": "models/gemini-1.5-flash", // Fast and versatile performance
-  "gemini-1.5-flash-8b": "models/gemini-1.5-flash-8b", // High volume and lower intelligence tasks
-  "gemini-1.5-pro": "models/gemini-1.5-pro", // Complex reasoning tasks requiring more intelligence
-  
-  // Legacy models
-  "gemini-pro": "models/gemini-pro", // Gemini 1.0 Pro
-  "gemini-1.0-pro": "models/gemini-pro", // Legacy name mapping
-
-  // Embeddings
-  "gemini-embedding-exp": "models/gemini-embedding-exp", // Text embeddings
-};
-
 // Default model to use
-export const DEFAULT_MODEL = "gemini-2.5-pro-preview-03-25";
+export const DEFAULT_MODEL = DEFAULT_MODEL_ID;
 
 // Validate the application configuration
 export const validateConfig = () => {
+  console.log("Environment check for Gemini API key:");
+  console.log("- process.env.GEMINI_API_KEY present:", !!process.env.GEMINI_API_KEY);
+  console.log("- API Key first 4 chars:", GEMINI_API_KEY ? GEMINI_API_KEY.substring(0, 4) + '...' : 'None');
+  console.log("- API Key length:", GEMINI_API_KEY?.length || 0);
+  
   if (!isApiKeyConfigured) {
     console.error("GEMINI_API_KEY is not set. Please set the environment variable.");
     return false;
   }
+  
+  console.log("Configuration validated successfully");
   return true;
 };

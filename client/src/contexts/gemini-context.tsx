@@ -1,24 +1,10 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { ModelParameters } from '@shared/schema';
+import { ModelParameters, GEMINI_MODELS, DEFAULT_MODEL_ID, type GeminiModelId } from '@shared/schema';
 
-// Define available Gemini models
-export const GEMINI_MODELS = {
-  // Gemini 2.5 models
-  'gemini-2.5-pro-preview-03-25': 'Gemini 2.5 Pro (Preview)',
-  
-  // Gemini 2.0 models
-  'gemini-2.0-flash': 'Gemini 2.0 Flash',
-  'gemini-2.0-flash-lite': 'Gemini 2.0 Flash-Lite',
-  
-  // Gemini 1.5 models
-  'gemini-1.5-flash': 'Gemini 1.5 Flash',
-  'gemini-1.5-flash-8b': 'Gemini 1.5 Flash-8B',
-  'gemini-1.5-pro': 'Gemini 1.5 Pro',
-  
-  // Legacy models
-  'gemini-pro': 'Gemini 1.0 Pro',
-  'gemini-1.0-pro': 'Gemini 1.0 Pro (Legacy)',
-};
+// Create a frontend-friendly model map for display
+const DISPLAY_MODEL_NAMES = Object.fromEntries(
+  Object.entries(GEMINI_MODELS).map(([id, model]) => [id, model.displayName])
+);
 
 // Model config includes the selected model and its parameters
 export interface ModelConfig extends ModelParameters {
@@ -31,7 +17,7 @@ interface GeminiContextType {
   modelConfig: ModelConfig;
   updateModelConfig: (config: Partial<ModelConfig>) => void;
   resetModelConfig: () => void;
-  availableModels: typeof GEMINI_MODELS;
+  availableModels: Record<string, string>;
 }
 
 // Default parameters for each model
@@ -50,9 +36,8 @@ const GeminiContext = createContext<GeminiContextType | null>(null);
 
 // Create the provider component
 export function GeminiProvider({ children }: { children: ReactNode }) {
-  // Default to the most advanced model
-  const defaultModel = 'gemini-2.5-pro-preview-03-25';
-  const [modelConfig, setModelConfig] = useState<ModelConfig>(getDefaultConfig(defaultModel));
+  // Use the default model from schema
+  const [modelConfig, setModelConfig] = useState<ModelConfig>(getDefaultConfig(DEFAULT_MODEL_ID));
 
   // Update model configuration
   const updateModelConfig = (config: Partial<ModelConfig>) => {
@@ -77,7 +62,7 @@ export function GeminiProvider({ children }: { children: ReactNode }) {
         modelConfig,
         updateModelConfig,
         resetModelConfig,
-        availableModels: GEMINI_MODELS,
+        availableModels: DISPLAY_MODEL_NAMES,
       }}
     >
       {children}
