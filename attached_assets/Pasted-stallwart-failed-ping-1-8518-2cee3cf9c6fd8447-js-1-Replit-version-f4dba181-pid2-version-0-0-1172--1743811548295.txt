@@ -1,0 +1,170 @@
+stallwart: failed ping 1
+8518-2cee3cf9c6fd8447.js:1 Replit version f4dba181, pid2 version 0.0.1172
+_app-5ee2851bd5173dfd.js:13 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+_app-5ee2851bd5173dfd.js:13 [LaunchDarkly] LaunchDarkly client initialized
+_app-5ee2851bd5173dfd.js:13 [TikTok Pixel] - Invalid pixel ID
+Issue: The pixel ID is invalid. This could prevent your pixel from receiving data.
+Suggestion: Please go to Events Manager and find the correct pixel ID.
+(anonymous) @ _app-5ee2851bd5173dfd.js:13Understand this warningAI
+_app-5ee2851bd5173dfd.js:13 Adding extension: Extensions API Tester Object
+_app-5ee2851bd5173dfd.js:13 Adding extension: Perplexity Object
+_app-5ee2851bd5173dfd.js:13 Adding extension: GPT-Replit - ChatGPT in your Repl. Object
+_app-5ee2851bd5173dfd.js:13 Adding extension: AI Playground Object
+11Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.Understand this errorAI
+framework-0d70231b91475f32.js:1 Unrecognized feature: 'ambient-light-sensor'.
+_ @ framework-0d70231b91475f32.js:1Understand this warningAI
+framework-0d70231b91475f32.js:1 Unrecognized feature: 'battery'.
+_ @ framework-0d70231b91475f32.js:1Understand this warningAI
+framework-0d70231b91475f32.js:1 Unrecognized feature: 'execution-while-not-rendered'.
+_ @ framework-0d70231b91475f32.js:1Understand this warningAI
+framework-0d70231b91475f32.js:1 Unrecognized feature: 'execution-while-out-of-viewport'.
+_ @ framework-0d70231b91475f32.js:1Understand this warningAI
+framework-0d70231b91475f32.js:1 Unrecognized feature: 'layout-animations'.
+_ @ framework-0d70231b91475f32.js:1Understand this warningAI
+framework-0d70231b91475f32.js:1 Unrecognized feature: 'legacy-image-formats'.
+_ @ framework-0d70231b91475f32.js:1Understand this warningAI
+framework-0d70231b91475f32.js:1 Unrecognized feature: 'navigation-override'.
+_ @ framework-0d70231b91475f32.js:1Understand this warningAI
+framework-0d70231b91475f32.js:1 Unrecognized feature: 'oversized-images'.
+_ @ framework-0d70231b91475f32.js:1Understand this warningAI
+framework-0d70231b91475f32.js:1 Unrecognized feature: 'publickey-credentials'.
+_ @ framework-0d70231b91475f32.js:1Understand this warningAI
+framework-0d70231b91475f32.js:1 Unrecognized feature: 'speaker-selection'.
+_ @ framework-0d70231b91475f32.js:1Understand this warningAI
+framework-0d70231b91475f32.js:1 Unrecognized feature: 'unoptimized-images'.
+_ @ framework-0d70231b91475f32.js:1Understand this warningAI
+framework-0d70231b91475f32.js:1 Unrecognized feature: 'unsized-media'.
+_ @ framework-0d70231b91475f32.js:1Understand this warningAI
+framework-0d70231b91475f32.js:1 Unrecognized feature: 'pointer-lock'.
+_ @ framework-0d70231b91475f32.js:1Understand this warningAI
+framework-0d70231b91475f32.js:1 Allow attribute will take precedence over 'allowfullscreen'.
+_ @ framework-0d70231b91475f32.js:1Understand this warningAI
+framework-0d70231b91475f32.js:1 Allow attribute will take precedence over 'allowpaymentrequest'.
+_ @ framework-0d70231b91475f32.js:1Understand this warningAI
+_app-5ee2851bd5173dfd.js:13 Command: hello has unrecognized contributions: editor-context-menu. Valid contributions are commandbar,filetree-context-menu,sidebar-search,editor-context-menu Object
+(anonymous) @ _app-5ee2851bd5173dfd.js:13Understand this warningAI
+8_app-5ee2851bd5173dfd.js:13 Invalid href 'https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev//' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-5ee2851bd5173dfd.js:13Understand this errorAI
+eruda.js:2 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=iz2Oi4X0hBx_' is invalid.
+    at new t (eruda.js:2:218737)
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)Understand this errorAI
+2299WebSocket connection to '<URL>' failed: WebSocket is closed before the connection is established.Understand this warningAI
+59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/api/conversations:1 
+            
+            
+           Failed to load resource: the server responded with a status of 400 (Bad Request)Understand this errorAI
+59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/src/lib/queryClient.ts:27 Uncaught (in promise) Error: API request failed with status 400
+    at apiRequest (queryClient.ts:27:11)
+    at async conversations-context.tsx:64:29
+    at async handleSubmit (chat-view.tsx:103:7)Understand this errorAI
+525Chrome is moving towards a new experience that allows users to choose to browse without third-party cookies.Understand this warningAI
+1560 log entries are not shown.Understand this warningAI
+_app-5ee2851bd5173dfd.js:13 Invalid href 'https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev//' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-5ee2851bd5173dfd.js:13
+d @ main-749c652c57056271.js:1
+(anonymous) @ _app-5ee2851bd5173dfd.js:29
+useMemo @ framework-0d70231b91475f32.js:1
+t.useMemo @ framework-0d70231b91475f32.js:1
+(anonymous) @ _app-5ee2851bd5173dfd.js:29
+ld @ framework-0d70231b91475f32.js:1
+ou @ framework-0d70231b91475f32.js:1
+i @ framework-0d70231b91475f32.js:1
+uI @ framework-0d70231b91475f32.js:1
+(anonymous) @ framework-0d70231b91475f32.js:1
+uM @ framework-0d70231b91475f32.js:1
+uS @ framework-0d70231b91475f32.js:1
+C @ framework-0d70231b91475f32.js:1
+z @ framework-0d70231b91475f32.js:1Understand this errorAI
+workspace_iframe.html:32 Unrecognized feature: 'ambient-light-sensor'.Understand this warningAI
+workspace_iframe.html:32 Unrecognized feature: 'battery'.Understand this warningAI
+workspace_iframe.html:32 Unrecognized feature: 'execution-while-not-rendered'.Understand this warningAI
+workspace_iframe.html:32 Unrecognized feature: 'execution-while-out-of-viewport'.Understand this warningAI
+workspace_iframe.html:32 Unrecognized feature: 'layout-animations'.Understand this warningAI
+workspace_iframe.html:32 Unrecognized feature: 'legacy-image-formats'.Understand this warningAI
+workspace_iframe.html:32 Unrecognized feature: 'navigation-override'.Understand this warningAI
+workspace_iframe.html:32 Unrecognized feature: 'oversized-images'.Understand this warningAI
+workspace_iframe.html:32 Unrecognized feature: 'publickey-credentials'.Understand this warningAI
+workspace_iframe.html:32 Unrecognized feature: 'speaker-selection'.Understand this warningAI
+workspace_iframe.html:32 Unrecognized feature: 'unoptimized-images'.Understand this warningAI
+workspace_iframe.html:32 Unrecognized feature: 'unsized-media'.Understand this warningAI
+workspace_iframe.html:32 Allow attribute will take precedence over 'allowfullscreen'.Understand this warningAI
+workspace_iframe.html:32 Allow attribute will take precedence over 'allowpaymentrequest'.Understand this warningAI
+client:536 WebSocket connection to 'wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/?token=E3Ga-k_ZsHJX' failed: 
+t @ Network.js:227
+setupWebSocket @ client:536
+(anonymous) @ client:531Understand this errorAI
+Network.js:227 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=E3Ga-k_ZsHJX' is invalid.
+    at new t (Network.js:227:18)
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)
+t @ Network.js:227
+setupWebSocket @ client:536
+fallback @ client:509
+(anonymous) @ client:555Understand this errorAI
+queryClient.ts:32 
+            
+            
+           POST https://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/api/conversations 400 (Bad Request)
+window.fetch @ Network.js:219
+apiRequest @ queryClient.ts:32
+(anonymous) @ conversations-context.tsx:78
+handleSubmit @ chat-view.tsx:109
+handleSubmit @ message-input.tsx:21
+handleKeyDown @ message-input.tsx:31
+callCallback2 @ chunk-RPCDYKBN.js?v=fe135ed3:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=fe135ed3:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=fe135ed3:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=fe135ed3:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=fe135ed3:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=fe135ed3:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=fe135ed3:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=fe135ed3:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=fe135ed3:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=fe135ed3:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=fe135ed3:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=fe135ed3:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=fe135ed3:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=fe135ed3:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=fe135ed3:5449Understand this errorAI
+queryClient.ts:36 Uncaught (in promise) Error: API request failed with status 400
+    at apiRequest (queryClient.ts:36:11)
+    at async conversations-context.tsx:78:29
+    at async handleSubmit (chat-view.tsx:109:7)
+apiRequest @ queryClient.ts:36
+await in apiRequest
+(anonymous) @ conversations-context.tsx:78
+handleSubmit @ chat-view.tsx:109
+handleSubmit @ message-input.tsx:21
+handleKeyDown @ message-input.tsx:31
+callCallback2 @ chunk-RPCDYKBN.js?v=fe135ed3:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=fe135ed3:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=fe135ed3:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=fe135ed3:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=fe135ed3:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=fe135ed3:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=fe135ed3:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=fe135ed3:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=fe135ed3:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=fe135ed3:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=fe135ed3:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=fe135ed3:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=fe135ed3:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=fe135ed3:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=fe135ed3:5449Understand this errorAI

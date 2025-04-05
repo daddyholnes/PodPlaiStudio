@@ -103,34 +103,49 @@ export default function ChatView() {
   
   // Handle message submission
   const handleSubmit = async (text: string, files: File[]) => {
-    // Create new conversation if needed
-    if (!selectedConversation) {
-      const title = text.substring(0, 30) + (text.length > 30 ? '...' : '');
-      await createConversation(title);
-      return; // The effect will trigger a re-render with the new conversation
+    try {
+      // Create new conversation if needed
+      if (!selectedConversation) {
+        const title = text.substring(0, 30) + (text.length > 30 ? '...' : '');
+        console.log("Creating new conversation:", title);
+        await createConversation(title);
+        
+        // Wait a brief moment for state to update
+        setTimeout(() => {
+          if (text.trim()) {
+            // Resubmit with the text after the conversation is created
+            handleSubmit(text, files);
+          }
+        }, 500);
+        return;
+      }
+    
+      console.log("Sending message to conversation:", selectedConversation?.id);
+      setIsGenerating(true);
+    
+      // Process image files if any
+      const processedFiles = await Promise.all(
+        files.map(async (file) => {
+          if (file.type.startsWith('image/')) {
+            return new Promise<{ type: 'image', mimeType: string, fileData: string }>((resolve) => {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                resolve({
+                  type: 'image',
+                  mimeType: file.type,
+                  fileData: e.target?.result as string
+                });
+              };
+              reader.readAsDataURL(file);
+            });
+          }
+          return null;
+        })
+      );
+    } catch (error) {
+      console.error("Error in handleSubmit:", error);
+      setIsGenerating(false);
     }
-    
-    setIsGenerating(true);
-    
-    // Process image files if any
-    const processedFiles = await Promise.all(
-      files.map(async (file) => {
-        if (file.type.startsWith('image/')) {
-          return new Promise<{ type: string, mimeType: string, fileData: string }>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              resolve({
-                type: 'image',
-                mimeType: file.type,
-                fileData: e.target?.result as string
-              });
-            };
-            reader.readAsDataURL(file);
-          });
-        }
-        return null;
-      })
-    );
     
     // Create user message content parts
     const userMessageParts = [

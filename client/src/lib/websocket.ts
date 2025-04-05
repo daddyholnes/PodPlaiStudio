@@ -1,7 +1,8 @@
 // Define the connection protocol based on the current environment
 export const getWebSocketUrl = () => {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${protocol}//${window.location.host}/api/ws`;
+  const host = window.location.host || 'localhost:5000'; // Fallback to default port
+  return `${protocol}//${host}/api/ws`;
 };
 
 // WebSocket message types enum
