@@ -1,0 +1,47 @@
+{type: 'pong', timestamp: 1743890620880, echo: 1743890620530}
+Console.js:61 WebSocket message received: {type: 'ping', timestamp: 1743890636869}
+Console.js:61 WebSocket message received: {type: 'ping', timestamp: 1743890636869}
+Console.js:61 WebSocket message received: {type: 'pong', timestamp: 1743890640444, echo: 1743890640095}
+Console.js:61 WebSocket message received: {type: 'pong', timestamp: 1743890640876, echo: 1743890640530}
+Console.js:61 Creating new conversation: gem?
+Console.js:61 Creating conversation with: {title: 'gem?', model: 'gemini-1.5-pro'}
+Console.js:61 Conversation created: {title: 'gem?', model: 'gemini-1.5-pro', id: 1, createdAt: '2025-04-05T22:04:08.046Z', updatedAt: '2025-04-05T22:04:08.046Z'}
+Console.js:61 New conversation created: {title: 'gem?', model: 'gemini-1.5-pro', id: 1, createdAt: '2025-04-05T22:04:08.046Z', updatedAt: '2025-04-05T22:04:08.046Z'}
+Console.js:61 Selected conversation updated, sending pending message 1 gem?
+Console.js:61 Sending message to conversation: 1
+Console.js:61 Sending chat message via WebSocket: 1
+Console.js:61 WebSocket message received: {type: 'error', error: 'Gemini API error (400): {\n  "error": {\n    "code":…ield."\n          }\n        ]\n      }\n    ]\n  }\n}\n'}
+Console.js:61 WebSocket error: Gemini API error (400): {
+  "error": {
+    "code": 400,
+    "message": "Invalid JSON payload received. Unknown name \"systemInstruction\": Cannot find field.",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.BadRequest",
+        "fieldViolations": [
+          {
+            "description": "Invalid JSON payload received. Unknown name \"systemInstruction\": Cannot find field."
+          }
+        ]
+      }
+    ]
+  }
+}
+
+Mt.forEach.n.<computed> @ Console.js:61
+handleWebSocketMessage @ chat-view.tsx:94Understand this errorAI
+Console.js:61 WebSocket connection closed with code 1006 and reason: No reason provided
+Console.js:61 Reconnecting after 3000ms (attempt 1)
+Console.js:61 WebSocket connection closed with code 1006 and reason: No reason provided
+Console.js:61 Reconnecting after 3000ms (attempt 1)
+Console.js:61 Closing existing WebSocket before creating a new one
+Console.js:61 Initializing global WebSocket (attempt 2)
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Closing existing WebSocket before creating a new one
+Console.js:61 Initializing global WebSocket (attempt 2)
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 WebSocket connection opened successfully
+Console.js:61 WebSocket message received: {type: 'pong', timestamp: 1743890660455, echo: 1743890660104}
+Console.js:61 WebSocket connection opened successfully
+Console.js:61 WebSocket message received: {type: 'pong', timestamp: 1743890660885, echo: 1743890660536}

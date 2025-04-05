@@ -105,7 +105,7 @@ export async function generateContent(
       topP: validatedParams.topP,
       maxOutputTokens: validatedParams.maxOutputTokens,
     },
-    systemInstruction: validatedParams.systemInstructions ? {
+    systemInstructions: validatedParams.systemInstructions ? {
       parts: [{ text: validatedParams.systemInstructions }],
     } : undefined,
   };
@@ -163,7 +163,7 @@ export async function generateContentStream(
       topP: validatedParams.topP,
       maxOutputTokens: validatedParams.maxOutputTokens,
     },
-    systemInstruction: validatedParams.systemInstructions ? {
+    systemInstructions: validatedParams.systemInstructions ? {
       parts: [{ text: validatedParams.systemInstructions }],
     } : undefined,
   };
