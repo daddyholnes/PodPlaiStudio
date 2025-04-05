@@ -53,6 +53,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Parse the message
         const data = JSON.parse(message.toString());
+        console.log('WebSocket message received:', data.type, data.conversationId || '');
         
         // Handle different message types
         switch (data.type) {

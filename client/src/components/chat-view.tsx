@@ -68,20 +68,34 @@ export default function ChatView() {
     if (!websocket.socket || websocket.status !== 'open') return;
     
     const handleWebSocketMessage = async (event: MessageEvent) => {
-      const data = JSON.parse(event.data);
-      
-      if (data.type === 'chunk' && data.conversationId === selectedConversation?.id) {
-        // Handle message chunk
-        queryClient.invalidateQueries({ 
-          queryKey: ['/api/conversations', selectedConversation?.id, 'messages'] 
-        });
-      }
-      else if (data.type === 'done') {
-        setIsGenerating(false);
-      }
-      else if (data.type === 'error') {
-        console.error('WebSocket error:', data.error);
-        setIsGenerating(false);
+      try {
+        const data = JSON.parse(event.data);
+        console.log("WebSocket message received:", data);
+        
+        if (data.type === 'chunk' && data.conversationId === selectedConversation?.id) {
+          // Handle message chunk - force refetch all messages to get the updated content
+          await queryClient.invalidateQueries({ 
+            queryKey: ['/api/conversations', selectedConversation?.id, 'messages'] 
+          });
+          // Force a refetch to ensure we have the latest data
+          await queryClient.refetchQueries({
+            queryKey: ['/api/conversations', selectedConversation?.id, 'messages']
+          });
+        }
+        else if (data.type === 'done') {
+          console.log("Message generation complete");
+          setIsGenerating(false);
+          // Final refetch to get the complete message
+          await queryClient.invalidateQueries({ 
+            queryKey: ['/api/conversations', selectedConversation?.id, 'messages'] 
+          });
+        }
+        else if (data.type === 'error') {
+          console.error('WebSocket error:', data.error);
+          setIsGenerating(false);
+        }
+      } catch (error) {
+        console.error("Error handling WebSocket message:", error);
       }
     };
     
@@ -92,7 +106,7 @@ export default function ChatView() {
         websocket.socket.removeEventListener('message', handleWebSocketMessage);
       }
     };
-  }, [websocket.socket, websocket.status, selectedConversation?.id]);
+  }, [websocket.socket, websocket.status, selectedConversation?.id, queryClient]);
   
   // Function to send message to Gemini API through REST endpoint
   const sendMessageToGemini = async (model: string, messages: any[], params: ModelParameters) => {
