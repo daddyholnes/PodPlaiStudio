@@ -8,6 +8,35 @@ export const queryClient = new QueryClient({
       gcTime: 1000 * 60 * 10, // 10 minutes
       retry: 1,
       refetchOnWindowFocus: true,
+      queryFn: async ({ queryKey }) => {
+        const [url, ...params] = Array.isArray(queryKey) ? queryKey : [queryKey];
+        
+        if (typeof url !== 'string') {
+          throw new Error('Invalid query key');
+        }
+        
+        // Handle nested query keys like ['/api/conversations', id, 'messages']
+        let fullUrl = url;
+        if (params.length > 0) {
+          if (params.length === 2 && params[1] === 'messages') {
+            // Format: ['/api/conversations', id, 'messages']
+            fullUrl = `${url}/${params[0]}/messages`;
+          }
+        }
+        
+        const response = await fetch(fullUrl);
+        
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (contentType?.includes('application/json')) {
+          return response.json();
+        }
+        
+        return response.text();
+      },
     },
   },
 });

@@ -1,0 +1,78 @@
+wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Creating new conversation: hello
+Console.js:61 Creating conversation with: {title: 'hello', model: 'gemini-1.5-pro'}
+Console.js:61 Conversation created: {title: 'hello', model: 'gemini-1.5-pro', id: 1, createdAt: '2025-04-05T21:42:52.721Z', updatedAt: '2025-04-05T21:42:52.721Z'}
+Console.js:61 New conversation created: {title: 'hello', model: 'gemini-1.5-pro', id: 1, createdAt: '2025-04-05T21:42:52.721Z', updatedAt: '2025-04-05T21:42:52.721Z'}
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Selected conversation updated, sending pending message 1 hello
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Sending message to conversation: 1
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Error in handleSubmit: Error: Missing queryFn: '["/api/conversations",1,"messages"]'
+    at @tanstack_react-query.js?v=702ccd63:255:33
+    at Object.fetchFn [as fn] (@tanstack_react-query.js?v=702ccd63:840:14)
+    at run (@tanstack_react-query.js?v=702ccd63:494:49)
+    at @tanstack_react-query.js?v=702ccd63:519:11
+Mt.forEach.n.<computed> @ Console.js:61
+handleSubmit @ chat-view.tsx:257
+await in handleSubmit
+(anonymous) @ chat-view.tsx:134
+setTimeout
+(anonymous) @ chat-view.tsx:132
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=702ccd63:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=702ccd63:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=702ccd63:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=702ccd63:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=702ccd63:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=702ccd63:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=702ccd63:19447
+(anonymous) @ chunk-RPCDYKBN.js?v=702ccd63:19328
+workLoop @ chunk-RPCDYKBN.js?v=702ccd63:197
+flushWork @ chunk-RPCDYKBN.js?v=702ccd63:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=702ccd63:384Understand this errorAI
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf.replit.dev/ws
+Console.js:61 Connecting to WebSocket URL: wss://59c993a6-a8ff-466c-adf4-b36840846f5b-00-1pm70d8lcjn2g.worf

@@ -17,10 +17,7 @@ export default function ConfigPanel() {
   // Query API status
   const { data: apiStatus } = useQuery<ApiStatus>({
     queryKey: ['/api/status'],
-    initialData: {
-      apiKeyConfigured: true,
-      apiKeyMasked: 'GEMINI_API_KEY_****',
-    }
+    // No initialData to ensure it fetches from the server
   });
   
   const [showApiKey, setShowApiKey] = useState(false);
