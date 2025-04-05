@@ -43,7 +43,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // Create WebSocket server with a distinct path to avoid conflicts with Vite
-  const wss = new WebSocketServer({ server: httpServer, path: '/api/ws' });
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  console.log('WebSocket server initialized at path: /ws');
   
   // Handle WebSocket connections
   wss.on('connection', (ws) => {
@@ -437,8 +438,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post('/api/conversations', async (req, res) => {
     try {
+      console.log('Attempting to create conversation, request body:', req.body);
       const validatedData = insertConversationSchema.parse(req.body);
+      console.log('Validated data:', validatedData);
       const conversation = await storage.createConversation(validatedData);
+      console.log('Created conversation:', conversation);
       res.status(201).json(conversation);
     } catch (error) {
       console.error('Error creating conversation:', error);

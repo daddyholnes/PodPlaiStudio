@@ -96,11 +96,22 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   // Send message via WebSocket
   const sendMessage = useCallback((data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(data);
-      return true;
+      try {
+        socketRef.current.send(data);
+        return true;
+      } catch (error) {
+        console.error('Error sending WebSocket message:', error);
+        return false;
+      }
+    } else {
+      console.warn('WebSocket not ready, current state:', socketRef.current?.readyState);
+      // If socket isn't ready but exists, try to reconnect
+      if (socketRef.current && socketRef.current.readyState !== WebSocket.CONNECTING) {
+        connect();
+      }
+      return false;
     }
-    return false;
-  }, []);
+  }, [connect]);
 
   // Close WebSocket connection
   const closeConnection = useCallback(() => {

@@ -2,7 +2,9 @@
 export const getWebSocketUrl = () => {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const host = window.location.host || 'localhost:5000'; // Fallback to default port
-  return `${protocol}//${host}/api/ws`;
+  const wsUrl = `${protocol}//${host}/ws`;
+  console.log('Connecting to WebSocket URL:', wsUrl);
+  return wsUrl;
 };
 
 // WebSocket message types enum

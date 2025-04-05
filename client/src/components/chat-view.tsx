@@ -122,13 +122,20 @@ export default function ChatView() {
   useEffect(() => {
     // If we have a selected conversation and a pending message, send it
     if (selectedConversation && pendingSubmissionRef.current) {
+      console.log("Selected conversation updated, sending pending message", 
+        selectedConversation.id, pendingSubmissionRef.current.text.substring(0, 30));
+      
       const { text, files } = pendingSubmissionRef.current;
       pendingSubmissionRef.current = null; // Clear to prevent duplicate sends
       
       // Small delay to ensure state is fully updated
       setTimeout(() => {
-        handleSubmit(text, files);
-      }, 100);
+        try {
+          handleSubmit(text, files);
+        } catch (error) {
+          console.error("Error sending pending message:", error);
+        }
+      }, 300); // Increased delay to ensure state fully propagates
     }
   }, [selectedConversation]);
   
@@ -143,7 +150,14 @@ export default function ChatView() {
         // Store the text and files for later use
         pendingSubmissionRef.current = { text, files };
         
-        await createConversation(title);
+        try {
+          const newConversation = await createConversation(title);
+          console.log("New conversation created:", newConversation);
+        } catch (err) {
+          console.error("Failed to create conversation:", err);
+          pendingSubmissionRef.current = null; // Clear pending submission on error
+          return;
+        }
         // The effect for selectedConversation change will handle sending the message
         return;
       }

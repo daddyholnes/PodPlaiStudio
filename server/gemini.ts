@@ -1,5 +1,15 @@
 import { ModelParametersSchema, type MessagePart, type MessageRole } from "@shared/schema";
-import fetch from "node-fetch";
+import fetch, { Response } from "node-fetch";
+
+// Add ReadableStream type augmentation to make TypeScript support getReader()
+declare global {
+  interface ReadableStream {
+    getReader(): {
+      read(): Promise<{ done: boolean; value: Uint8Array }>;
+      releaseLock(): void;
+    };
+  }
+}
 
 // Gemini API base URL
 const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1";
@@ -76,12 +86,34 @@ function convertToGeminiMessages(messages: { role: MessageRole; content: Message
   }));
 }
 
+// Define the response type for Gemini content generation
+interface GeminiContentResponse {
+  candidates: {
+    content: {
+      parts: {
+        text?: string;
+      }[];
+    };
+    finishReason: string;
+    safetyRatings: {
+      category: string;
+      probability: string;
+    }[];
+  }[];
+  promptFeedback?: {
+    safetyRatings: {
+      category: string;
+      probability: string;
+    }[];
+  };
+}
+
 // Generate content with Gemini API
 export async function generateContent(
   model: string, 
   messages: { role: MessageRole; content: MessagePart[] }[], 
   parameters: unknown
-) {
+): Promise<GeminiContentResponse> {
   // Validate and parse parameters
   const validatedParams = ModelParametersSchema.parse(parameters);
 
@@ -126,8 +158,8 @@ export async function generateContent(
     throw new Error(`Gemini API error (${response.status}): ${errorText}`);
   }
 
-  // Return the JSON response
-  return await response.json();
+  // Return the JSON response with proper typing
+  return await response.json() as GeminiContentResponse;
 }
 
 // Generate content with streaming
@@ -135,7 +167,7 @@ export async function generateContentStream(
   model: string, 
   messages: { role: MessageRole; content: MessagePart[] }[], 
   parameters: unknown
-) {
+): Promise<Response & { body: ReadableStream }> {
   // Validate and parse parameters
   const validatedParams = ModelParametersSchema.parse(parameters);
 
@@ -180,8 +212,8 @@ export async function generateContentStream(
     throw new Error(`Gemini API error (${response.status}): ${errorText}`);
   }
 
-  // Return the response for streaming
-  return response;
+  // Return the response for streaming with correct typings
+  return response as Response & { body: ReadableStream };
 }
 
 // Count tokens in a text (approximate)

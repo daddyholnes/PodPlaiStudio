@@ -75,15 +75,22 @@ export function ConversationsProvider({ children }: { children: ReactNode }) {
   
   // Create a new conversation
   const createConversation = useCallback(async (title: string): Promise<Conversation> => {
-    // Default model from app settings if available
-    const model = 'gemini-1.5-pro'; // Default model
-    const newConversation = await apiRequest('/api/conversations', 'POST', { 
-      title,
-      model
-    }) as Conversation;
-    queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
-    setSelectedConversation(newConversation);
-    return newConversation;
+    try {
+      // Default model from app settings if available
+      const model = 'gemini-1.5-pro'; // Default model
+      console.log('Creating conversation with:', { title, model });
+      const newConversation = await apiRequest('/api/conversations', 'POST', { 
+        title,
+        model
+      }) as Conversation;
+      console.log('Conversation created:', newConversation);
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+      setSelectedConversation(newConversation);
+      return newConversation;
+    } catch (error) {
+      console.error('Failed to create conversation:', error);
+      throw error;
+    }
   }, [queryClient]);
   
   // Select a conversation
