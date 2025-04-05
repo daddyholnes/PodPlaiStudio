@@ -49,6 +49,7 @@ const DEFAULT_MODELS: Model[] = [
       temperature: 0.5,
       maxOutputTokens: 4096,
       topP: 0.9,
+      topK: 40,
       stream: true
     }
   }
@@ -762,8 +763,7 @@ export default function MultiModelChatView() {
       
       {/* Input Area */}
       <MessageInput 
-        onSubmit={handleSubmit} 
-        placeholder="Message all models or use @ModelName to target a specific model..."
+        onSubmit={handleSubmit}
       />
     </>
   );
