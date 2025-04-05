@@ -9,7 +9,11 @@ export function useGemini() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isDarkMode } = useTheme();
-  const websocket = useWebSocket();
+  const websocket = useWebSocket({
+    onMessage: (event) => {
+      // Handle websocket messages here if needed
+    }
+  });
   
   // Generate text with Gemini
   const generate = useCallback(async (
