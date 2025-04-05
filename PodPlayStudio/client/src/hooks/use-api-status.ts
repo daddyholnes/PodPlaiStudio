@@ -1,25 +1,24 @@
 import { useQuery } from '@tanstack/react-query';
 
-type APIStatus = {
+export interface ApiStatus {
   apiKeyConfigured: boolean;
   apiKey: string | null;
-};
+  version: string;
+}
 
 export function useApiStatus() {
-  const { data, isLoading, error } = useQuery<APIStatus>({
+  const { data, isLoading, isError, error } = useQuery<ApiStatus>({
     queryKey: ['/api/status'],
-    queryFn: async () => {
-      const response = await fetch('/api/status');
-      if (!response.ok) {
-        throw new Error('Failed to fetch API status');
-      }
-      return response.json();
-    },
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
   });
 
   return {
     status: data,
     isLoading,
+    isError,
     error,
+    isApiConfigured: data?.apiKeyConfigured || false,
   };
 }

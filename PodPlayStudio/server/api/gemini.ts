@@ -1,63 +1,83 @@
-import fetch from 'node-fetch';
-import { ModelConfig } from '@shared/schema';
-import * as config from '../config';
+// Gemini API Integration for PodPlay API Studio
 import fs from 'fs';
-import path from 'path';
+import { GEMINI_API_KEY, DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_MAX_OUTPUT_TOKENS } from '../config';
+import storage from '../storage';
 
-// Helper type for file data
-interface FileData {
-  mimeType: string;
-  data: Buffer;
+// Define the model config interface
+interface ModelConfig {
+  model: string;
+  temperature?: number; 
+  maxOutputTokens?: number;
+  topK?: number;
+  topP?: number;
+  stopSequences?: string[];
+  streamResponse?: boolean;
 }
 
-/**
- * Gemini API Service
- * 
- * This module provides functions to interact with the Google Gemini API.
- */
+// Define the response interface
+interface Response {
+  text?: string;
+  error?: string;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+  raw?: any;
+}
 
-/**
- * Generate text with Gemini models
- */
-export async function generateText(
-  prompt: string,
-  modelConfig: ModelConfig,
-  stream: boolean = false
-) {
-  const { 
-    model = config.DEFAULT_MODEL, 
-    temperature = config.DEFAULT_TEMPERATURE,
-    topK = config.DEFAULT_TOP_K,
-    topP = config.DEFAULT_TOP_P,
-    maxOutputTokens = config.DEFAULT_MAX_OUTPUT_TOKENS,
-  } = modelConfig;
+// Get API key from settings or environment
+async function getApiKey(): Promise<string> {
+  // Try to get API key from storage first
+  const settings = await storage.getAppSettings();
   
-  const apiKey = process.env.GEMINI_API_KEY || config.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('No Gemini API key provided');
+  // If API key exists in settings, use it
+  if (settings?.apiKey) {
+    return settings.apiKey;
   }
   
-  const url = `${config.GEMINI_API_URL}/${config.GEMINI_API_VERSION}/models/${model}:${stream ? 'streamGenerateContent' : 'generateContent'}?key=${apiKey}`;
+  // Fallback to environment variable
+  if (GEMINI_API_KEY) {
+    return GEMINI_API_KEY;
+  }
   
-  const requestBody = {
-    contents: [
-      {
-        parts: [
-          {
-            text: prompt
-          }
-        ]
-      }
-    ],
-    generationConfig: {
-      temperature,
-      topK,
-      topP,
-      maxOutputTokens,
-    },
-  };
-  
+  throw new Error('No API key found. Please set your Gemini API key in settings or environment variables.');
+}
+
+// Generate text with text-only prompt
+export async function generateText(
+  prompt: string, 
+  config: ModelConfig,
+  streamResponse: boolean = false
+): Promise<Response> {
   try {
+    const apiKey = await getApiKey();
+    
+    const modelName = config?.model || DEFAULT_MODEL;
+    const temperature = config?.temperature !== undefined ? config.temperature : DEFAULT_TEMPERATURE;
+    const maxOutputTokens = config?.maxOutputTokens || DEFAULT_MAX_OUTPUT_TOKENS;
+    
+    const requestBody = {
+      contents: [
+        {
+          parts: [
+            {
+              text: prompt
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature,
+        maxOutputTokens,
+        topK: config?.topK,
+        topP: config?.topP,
+        stopSequences: config?.stopSequences,
+      }
+    };
+    
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:${streamResponse ? 'streamGenerateContent' : 'generateContent'}?key=${apiKey}`;
+    
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -67,83 +87,115 @@ export async function generateText(
     });
     
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini API error: ${response.status} ${errorText}`);
+      const errorData = await response.json();
+      throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
     }
     
-    if (stream) {
-      return response;
-    } else {
-      const data = await response.json();
-      return data;
+    if (streamResponse) {
+      return response as unknown as Response;
     }
+    
+    const data = await response.json();
+    
+    // Check if response has candidates
+    if (!data.candidates || data.candidates.length === 0) {
+      throw new Error('No response candidates returned from Gemini API');
+    }
+    
+    // Extract text from the first candidate
+    const candidate = data.candidates[0];
+    
+    // Check for safety ratings that blocked the response
+    if (candidate.finishReason === 'SAFETY' || candidate.finishReason === 'BLOCKED') {
+      throw new Error('Response was blocked due to safety concerns');
+    }
+    
+    // Extract the text from parts
+    const generatedText = candidate.content.parts
+      .map((part: any) => part.text || '')
+      .join('');
+    
+    return {
+      text: generatedText,
+      usage: {
+        promptTokens: data.usageMetadata?.promptTokenCount || 0,
+        completionTokens: data.usageMetadata?.candidatesTokenCount || 0,
+        totalTokens: (data.usageMetadata?.promptTokenCount || 0) + (data.usageMetadata?.candidatesTokenCount || 0),
+      },
+      raw: data,
+    };
   } catch (error) {
-    if (error instanceof Error) {
-      throw new Error(`Failed to generate text: ${error.message}`);
-    }
-    throw new Error('Unknown error occurred while generating text');
+    console.error('Error generating text:', error);
+    return {
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
   }
 }
 
-/**
- * Generate text with image input
- */
+// Generate text with image input
 export async function generateTextWithImage(
   prompt: string,
-  imageFiles: string[],
-  modelConfig: ModelConfig,
-  stream: boolean = false
-) {
-  // Vision model must be used for images
-  const model = config.VISION_MODEL;
-  const { 
-    temperature = config.DEFAULT_TEMPERATURE,
-    topK = config.DEFAULT_TOP_K,
-    topP = config.DEFAULT_TOP_P,
-    maxOutputTokens = config.DEFAULT_MAX_OUTPUT_TOKENS,
-  } = modelConfig;
-  
-  const apiKey = process.env.GEMINI_API_KEY || config.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('No Gemini API key provided');
-  }
-  
-  const url = `${config.GEMINI_API_URL}/${config.GEMINI_API_VERSION}/models/${model}:${stream ? 'streamGenerateContent' : 'generateContent'}?key=${apiKey}`;
-  
-  // Load the images
-  const imageParts = await Promise.all(
-    imageFiles.map(async (filePath) => {
-      const fileData = await loadFileAsBase64(filePath);
-      return {
-        inlineData: {
-          data: fileData.data.toString('base64'),
-          mimeType: fileData.mimeType
-        }
-      };
-    })
-  );
-  
-  // Construct parts array with text prompt and images
-  const parts = [
-    { text: prompt },
-    ...imageParts
-  ];
-  
-  const requestBody = {
-    contents: [
-      {
-        parts
-      }
-    ],
-    generationConfig: {
-      temperature,
-      topK,
-      topP,
-      maxOutputTokens,
-    },
-  };
-  
+  imagePaths: string[],
+  config: ModelConfig,
+  streamResponse: boolean = false
+): Promise<Response> {
   try {
+    const apiKey = await getApiKey();
+    
+    const modelName = config?.model || 'gemini-pro-vision'; // Always use vision model for images
+    const temperature = config?.temperature !== undefined ? config.temperature : DEFAULT_TEMPERATURE;
+    const maxOutputTokens = config?.maxOutputTokens || DEFAULT_MAX_OUTPUT_TOKENS;
+    
+    // Prepare parts array with prompt text
+    const parts: any[] = [{ text: prompt }];
+    
+    // Add each image to parts
+    for (const imagePath of imagePaths) {
+      try {
+        const imageData = fs.readFileSync(imagePath);
+        const base64Image = imageData.toString('base64');
+        
+        // Get file extension
+        const extension = imagePath.split('.').pop()?.toLowerCase() || 'jpeg';
+        
+        // Determine MIME type
+        let mimeType = 'image/jpeg'; // Default
+        if (extension === 'png') {
+          mimeType = 'image/png';
+        } else if (extension === 'gif') {
+          mimeType = 'image/gif';
+        } else if (extension === 'webp') {
+          mimeType = 'image/webp';
+        }
+        
+        parts.push({
+          inlineData: {
+            mimeType,
+            data: base64Image,
+          }
+        });
+      } catch (err) {
+        console.error(`Error reading image file ${imagePath}:`, err);
+      }
+    }
+    
+    const requestBody = {
+      contents: [
+        {
+          parts
+        }
+      ],
+      generationConfig: {
+        temperature,
+        maxOutputTokens,
+        topK: config?.topK,
+        topP: config?.topP,
+        stopSequences: config?.stopSequences,
+      }
+    };
+    
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:${streamResponse ? 'streamGenerateContent' : 'generateContent'}?key=${apiKey}`;
+    
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -153,158 +205,153 @@ export async function generateTextWithImage(
     });
     
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini API error: ${response.status} ${errorText}`);
+      const errorData = await response.json();
+      throw new Error(`Gemini API error: ${errorData.error?.message || response.statusText}`);
     }
     
-    if (stream) {
-      return response;
-    } else {
-      const data = await response.json();
-      return data;
+    if (streamResponse) {
+      return response as unknown as Response;
     }
+    
+    const data = await response.json();
+    
+    // Check if response has candidates
+    if (!data.candidates || data.candidates.length === 0) {
+      throw new Error('No response candidates returned from Gemini API');
+    }
+    
+    // Extract text from the first candidate
+    const candidate = data.candidates[0];
+    
+    // Check for safety ratings that blocked the response
+    if (candidate.finishReason === 'SAFETY' || candidate.finishReason === 'BLOCKED') {
+      throw new Error('Response was blocked due to safety concerns');
+    }
+    
+    // Extract the text from parts
+    const generatedText = candidate.content.parts
+      .map((part: any) => part.text || '')
+      .join('');
+    
+    return {
+      text: generatedText,
+      usage: {
+        promptTokens: data.usageMetadata?.promptTokenCount || 0,
+        completionTokens: data.usageMetadata?.candidatesTokenCount || 0,
+        totalTokens: (data.usageMetadata?.promptTokenCount || 0) + (data.usageMetadata?.candidatesTokenCount || 0),
+      },
+      raw: data,
+    };
   } catch (error) {
-    if (error instanceof Error) {
-      throw new Error(`Failed to generate text with image: ${error.message}`);
-    }
-    throw new Error('Unknown error occurred while generating text with image');
+    console.error('Error generating text with image:', error);
+    return {
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
   }
 }
 
-/**
- * Helper to load file as Base64
- */
-async function loadFileAsBase64(filePath: string): Promise<FileData> {
-  return new Promise((resolve, reject) => {
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-      reject(new Error(`File not found: ${filePath}`));
-      return;
-    }
-    
-    // Get MIME type based on file extension
-    const mimeType = getMimeType(filePath);
-    
-    // Read file
-    fs.readFile(filePath, (err, data) => {
-      if (err) {
-        reject(new Error(`Failed to read file: ${err.message}`));
-        return;
-      }
-      
-      resolve({ data, mimeType });
-    });
-  });
-}
-
-/**
- * Get MIME type from file extension
- */
-function getMimeType(filePath: string): string {
-  const extension = path.extname(filePath).toLowerCase();
-  
-  const mimeMap: Record<string, string> = {
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.png': 'image/png',
-    '.gif': 'image/gif',
-    '.webp': 'image/webp',
-    '.svg': 'image/svg+xml',
-    '.mp4': 'video/mp4',
-    '.webm': 'video/webm',
-    '.mp3': 'audio/mp3',
-    '.wav': 'audio/wav',
-    '.ogg': 'audio/ogg',
-    '.pdf': 'application/pdf',
-  };
-  
-  return mimeMap[extension] || 'application/octet-stream';
-}
-
-/**
- * Process streaming response
- */
-export function processStreamResponse(
+// Process streaming response
+export async function processStreamResponse(
   response: Response,
-  onChunk: (chunk: any) => void,
+  onChunk: (chunk: string) => void,
   onDone: () => void,
   onError: (error: Error) => void
 ) {
-  const reader = response.body?.getReader();
-  
-  if (!reader) {
-    onError(new Error('Failed to get response reader'));
-    return;
-  }
-  
-  // Create a decoder for decoding the stream
-  const decoder = new TextDecoder('utf-8');
-  
-  // Process the stream
-  function processStream() {
-    reader.read().then(({ done, value }) => {
-      if (done) {
-        onDone();
-        return;
-      }
-      
+  try {
+    if (!response || !('body' in response)) {
+      throw new Error('Invalid response object for streaming');
+    }
+    
+    const reader = (response as any).body?.getReader();
+    
+    if (!reader) {
+      throw new Error('Cannot get reader from response');
+    }
+    
+    const decoder = new TextDecoder();
+    
+    let buffer = '';
+    
+    async function readStream() {
       try {
+        const { done, value } = await reader.read();
+        
+        if (done) {
+          onDone();
+          return;
+        }
+        
         // Decode the chunk
         const chunk = decoder.decode(value, { stream: true });
+        buffer += chunk;
         
-        // Parse and process each line
-        const lines = chunk.split('\n').filter(line => line.trim() !== '');
+        // Process the buffer line by line
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep the last incomplete line in the buffer
         
         for (const line of lines) {
-          try {
-            // Remove "data: " prefix if present
-            const jsonStr = line.startsWith('data: ') ? line.slice(5) : line;
-            const data = JSON.parse(jsonStr);
-            onChunk(data);
-          } catch (e) {
-            // Ignore parsing errors for individual chunks
-            console.warn('Error parsing chunk:', e);
+          if (line.startsWith('data: ')) {
+            const jsonData = line.slice(6); // Remove 'data: ' prefix
+            
+            if (jsonData === '[DONE]') {
+              onDone();
+              return;
+            }
+            
+            try {
+              const parsedData = JSON.parse(jsonData);
+              
+              // Check for error
+              if (parsedData.error) {
+                onError(new Error(parsedData.error.message || 'Unknown API error'));
+                return;
+              }
+              
+              // Extract text from candidates
+              if (parsedData.candidates && parsedData.candidates.length > 0) {
+                const candidate = parsedData.candidates[0];
+                
+                if (candidate.content && candidate.content.parts) {
+                  const text = candidate.content.parts
+                    .map((part: any) => part.text || '')
+                    .join('');
+                  
+                  if (text) {
+                    onChunk(text);
+                  }
+                }
+              }
+            } catch (e) {
+              console.error('Error parsing JSON from stream:', e);
+            }
           }
         }
         
-        // Continue processing
-        processStream();
+        // Continue reading
+        readStream();
       } catch (error) {
-        if (error instanceof Error) {
-          onError(error);
-        } else {
-          onError(new Error('Unknown error in stream processing'));
-        }
-      }
-    }).catch(onError);
-  }
-  
-  processStream();
-}
-
-/**
- * Count tokens for a prompt (estimation)
- * Note: This is a rough estimation, as the official token counting is not exposed via the API
- */
-export function estimateTokenCount(text: string): number {
-  // Very rough estimation: ~4 characters per token for English text
-  return Math.ceil(text.length / 4);
-}
-
-/**
- * Extract text from Gemini API response
- */
-export function extractTextFromResponse(response: any): string {
-  try {
-    if (response.candidates && response.candidates.length > 0) {
-      const candidate = response.candidates[0];
-      if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-        return candidate.content.parts.map((part: any) => part.text || '').join('');
+        onError(error instanceof Error ? error : new Error('Unknown error in stream processing'));
       }
     }
-    return '';
-  } catch (e) {
-    console.error('Error extracting text from response:', e);
-    return '';
+    
+    // Start reading the stream
+    readStream();
+  } catch (error) {
+    onError(error instanceof Error ? error : new Error('Unknown error in stream setup'));
   }
+}
+
+// Extract text from API response
+export function extractTextFromResponse(response: Response): string {
+  if (response.error) {
+    return `Error: ${response.error}`;
+  }
+  
+  return response.text || '';
+}
+
+// Count tokens for a given text (estimate)
+export function estimateTokenCount(text: string): number {
+  // This is a very rough estimate: about 4 characters per token
+  return Math.ceil(text.length / 4);
 }

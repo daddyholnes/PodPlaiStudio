@@ -1,169 +1,78 @@
 import { z } from 'zod';
+import { createInsertSchema } from 'drizzle-zod';
 
-// Types for model configuration
-export type ModelType = string;
-
-export interface ModelConfig {
-  model: ModelType;
-  temperature?: number;
-  topK?: number;
-  topP?: number;
-  maxOutputTokens?: number;
-  apiType?: 'gemini' | 'vertex' | 'openai';
-  streamResponse?: boolean;
-}
-
-// Chat Messages and Sessions
-export interface ChatMessage {
-  id: string;
-  sessionId: string;
-  content: string;
-  role: 'user' | 'assistant' | 'system';
-  timestamp: Date;
-}
-
-export interface ChatSession {
-  id: string;
-  title: string;
-  createdAt: Date;
-  updatedAt: Date;
-  modelConfig: ModelConfig;
-}
-
-export const insertChatSessionSchema = z.object({
-  title: z.string(),
-  modelConfig: z.object({
-    model: z.string(),
-    temperature: z.number().optional(),
-    topK: z.number().optional(),
-    topP: z.number().optional(),
-    maxOutputTokens: z.number().optional(),
-    apiType: z.enum(['gemini', 'vertex', 'openai']).optional(),
-    streamResponse: z.boolean().optional(),
-  }),
+// Model Config Schema
+export const ModelConfigSchema = z.object({
+  model: z.string(),
+  temperature: z.number().min(0).max(1).optional(),
+  maxOutputTokens: z.number().positive().optional(),
+  topK: z.number().positive().optional(),
+  topP: z.number().min(0).max(1).optional(),
+  stopSequences: z.array(z.string()).optional(),
+  streamResponse: z.boolean().optional()
 });
-export type InsertChatSession = z.infer<typeof insertChatSessionSchema>;
 
-export const insertChatMessageSchema = z.object({
-  sessionId: z.string(),
+export type ModelConfig = z.infer<typeof ModelConfigSchema>;
+
+// Chat Message Schema
+export const ChatMessageSchema = z.object({
+  id: z.string().uuid(),
+  sessionId: z.string().uuid(),
   content: z.string(),
   role: z.enum(['user', 'assistant', 'system']),
-  timestamp: z.date().optional(),
+  timestamp: z.date()
 });
-export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 
-// App Settings
-export interface AppSettings {
-  id: string;
-  theme: 'light' | 'dark' | 'system';
-  apiKey?: string;
-}
+export const ChatMessageInsertSchema = createInsertSchema(ChatMessageSchema).omit({ id: true });
+export type ChatMessageInsert = z.infer<typeof ChatMessageInsertSchema>;
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
-export const insertAppSettingsSchema = z.object({
-  id: z.string().default('default'),
-  theme: z.enum(['light', 'dark', 'system']).default('system'),
-  apiKey: z.string().optional(),
+// Chat Session Schema
+export const ChatSessionSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  modelConfig: ModelConfigSchema.optional(),
+  createdAt: z.date(),
+  updatedAt: z.date()
 });
-export type InsertAppSettings = z.infer<typeof insertAppSettingsSchema>;
 
-// Project Configuration
-export interface ProjectConfig {
-  template?: string;
-  apiUsage?: {
-    model: ModelType;
-    totalTokens: number;
-    lastUsed: string;
-  };
-  deploymentInfo?: {
-    url?: string;
-    lastDeployed?: string;
-  };
-}
+export const ChatSessionInsertSchema = createInsertSchema(ChatSessionSchema).omit({ id: true });
+export type ChatSessionInsert = z.infer<typeof ChatSessionInsertSchema>;
+export type ChatSession = z.infer<typeof ChatSessionSchema>;
 
-export interface Project {
-  id: string;
-  name: string;
-  description?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  config: ProjectConfig;
-}
-
-export const insertProjectSchema = z.object({
-  name: z.string(),
-  description: z.string().optional(),
-  config: z.object({
-    template: z.string().optional(),
-    apiUsage: z.object({
-      model: z.string(),
-      totalTokens: z.number(),
-      lastUsed: z.string(),
-    }).optional(),
-    deploymentInfo: z.object({
-      url: z.string().optional(),
-      lastDeployed: z.string().optional(),
-    }).optional(),
-  }),
-});
-export type InsertProject = z.infer<typeof insertProjectSchema>;
-
-// Content Items
-export interface ContentItem {
-  id: string;
-  title: string;
-  content: string;
-  type: 'text' | 'image' | 'code';
-  prompt?: string;
-  modelConfig?: ModelConfig;
-  createdAt: Date;
-}
-
-export const insertContentItemSchema = z.object({
+// Content Item Schema
+export const ContentItemSchema = z.object({
+  id: z.string().uuid(),
   title: z.string(),
   content: z.string(),
-  type: z.enum(['text', 'image', 'code']),
+  type: z.string(),
   prompt: z.string().optional(),
-  modelConfig: z.object({
-    model: z.string(),
-    temperature: z.number().optional(),
-    topK: z.number().optional(),
-    topP: z.number().optional(),
-    maxOutputTokens: z.number().optional(),
-    apiType: z.enum(['gemini', 'vertex', 'openai']).optional(),
-    streamResponse: z.boolean().optional(),
-  }).optional(),
-  createdAt: z.date().optional(),
+  modelConfig: ModelConfigSchema.optional(),
+  createdAt: z.date()
 });
-export type InsertContentItem = z.infer<typeof insertContentItemSchema>;
 
-// Live API
-export interface LiveApiConfig {
-  model: ModelType;
-  useCamera: boolean;
-  useScreen: boolean;
-  useMicrophone: boolean;
-  responseFormat: 'text' | 'audio';
-  streamResponse: boolean;
-}
+export const ContentItemInsertSchema = createInsertSchema(ContentItemSchema).omit({ id: true });
+export type ContentItemInsert = z.infer<typeof ContentItemInsertSchema>;
+export type ContentItem = z.infer<typeof ContentItemSchema>;
 
-export interface LiveApiSession {
-  id: string;
-  title: string;
-  createdAt: Date;
-  config: LiveApiConfig;
-  lastInteraction?: Date;
-}
-
-export const insertLiveApiSessionSchema = z.object({
-  title: z.string(),
-  config: z.object({
-    model: z.string(),
-    useCamera: z.boolean(),
-    useScreen: z.boolean(),
-    useMicrophone: z.boolean(),
-    responseFormat: z.enum(['text', 'audio']),
-    streamResponse: z.boolean(),
-  }),
-  createdAt: z.date().optional(),
+// Project Schema
+export const ProjectSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  description: z.string().optional(),
+  config: z.any().optional(),
+  createdAt: z.date(),
+  updatedAt: z.date()
 });
-export type InsertLiveApiSession = z.infer<typeof insertLiveApiSessionSchema>;
+
+export const ProjectInsertSchema = createInsertSchema(ProjectSchema).omit({ id: true });
+export type ProjectInsert = z.infer<typeof ProjectInsertSchema>;
+export type Project = z.infer<typeof ProjectSchema>;
+
+// App Settings Schema
+export const AppSettingsSchema = z.object({
+  apiKey: z.string().optional(),
+  theme: z.string().optional()
+});
+
+export type AppSettings = z.infer<typeof AppSettingsSchema>;

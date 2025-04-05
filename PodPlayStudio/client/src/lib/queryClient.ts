@@ -3,54 +3,51 @@ import { QueryClient } from '@tanstack/react-query';
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000, // 1 minute
       refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      queryFn: async ({ queryKey }) => {
+        const [url] = Array.isArray(queryKey) ? queryKey : [queryKey];
+        
+        if (typeof url !== 'string') {
+          throw new Error('Invalid query key');
+        }
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (contentType?.includes('application/json')) {
+          return response.json();
+        }
+        
+        return response.text();
+      },
     },
   },
 });
 
-type ApiRequestOptions = {
-  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  headers?: Record<string, string>;
-  params?: Record<string, string>;
-  body?: any;
-};
-
-export async function apiRequest<T = any>(
-  endpoint: string,
-  options: ApiRequestOptions = {}
-): Promise<T> {
-  const { method = 'GET', headers = {}, params = {}, body } = options;
-
-  // Build query string
-  const queryString = new URLSearchParams(params).toString();
-  const url = `${endpoint}${queryString ? `?${queryString}` : ''}`;
-
-  const requestOptions: RequestInit = {
+export async function apiRequest(url: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH', data?: any) {
+  const response = await fetch(url, {
     method,
     headers: {
       'Content-Type': 'application/json',
-      ...headers,
     },
-    credentials: 'include',
-  };
-
-  if (body) {
-    requestOptions.body = JSON.stringify(body);
-  }
-
-  const response = await fetch(url, requestOptions);
+    body: data ? JSON.stringify(data) : undefined,
+  });
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(error || `API request failed with status ${response.status}`);
+    throw new Error(error || `Request failed with status ${response.status}`);
   }
 
-  // Check if response is empty
   const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
+  if (contentType?.includes('application/json')) {
     return response.json();
   }
 
-  return null as T;
+  return response.text();
 }

@@ -1,18 +1,31 @@
-// Placeholder for the toast hook that will be implemented with shadcn/ui
-// This is just a temporary implementation until we set up the shadcn components
+import { toast } from 'sonner';
 
-type ToastProps = {
-  title?: string;
-  description?: string;
-  variant?: 'default' | 'destructive';
+type ToastOptions = {
+  id?: string;
   duration?: number;
+  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'top-center' | 'bottom-center';
 };
 
 export const useToast = () => {
-  const toast = (props: ToastProps) => {
-    // For now just log to console, this will be replaced with actual toast implementation
-    console.log(`[Toast - ${props.variant || 'default'}] ${props.title || ''}`, props.description || '');
+  return {
+    success: (message: string, options?: ToastOptions) => {
+      toast.success(message, options);
+    },
+    error: (message: string, options?: ToastOptions) => {
+      toast.error(message, options);
+    },
+    info: (message: string, options?: ToastOptions) => {
+      toast.info(message, options);
+    },
+    warning: (message: string, options?: ToastOptions) => {
+      toast.warning(message, options);
+    },
+    dismiss: (toastId?: string) => {
+      if (toastId) {
+        toast.dismiss(toastId);
+      } else {
+        toast.dismiss();
+      }
+    },
   };
-
-  return { toast };
 };
