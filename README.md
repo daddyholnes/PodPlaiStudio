@@ -43,8 +43,8 @@ PodPlay API Studio provides a robust interface for interacting with Google's Gem
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/yourusername/podplay-api-studio.git
-cd podplay-api-studio
+git clone https://github.com/daddyholnes/PodPlaiStudio.git
+cd PodPlaiStudio
 ```
 
 2. **Install dependencies**
