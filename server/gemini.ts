@@ -1,5 +1,6 @@
 import { ModelParametersSchema, type MessagePart, type MessageRole } from "@shared/schema";
 import fetch, { Response } from "node-fetch";
+import { GEMINI_API_KEY, GEMINI_API_BASE_URL, GEMINI_MODELS, DEFAULT_MODEL, validateConfig } from "./config";
 
 // Add ReadableStream type augmentation to make TypeScript support getReader()
 declare global {
@@ -11,42 +12,10 @@ declare global {
   }
 }
 
-// Gemini API base URL
-const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1";
-
-// Get the Gemini API key from environment variables
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
-
-// Validate API key is set
-if (!GEMINI_API_KEY) {
-  console.error("GEMINI_API_KEY is not set. Please set the environment variable.");
+// Validate configuration on server startup
+if (!validateConfig()) {
   process.exit(1);
 }
-
-// Models available in Gemini
-export const GEMINI_MODELS = {
-  // Gemini 2.5 models
-  "gemini-2.5-pro-preview-03-25": "models/gemini-2.5-pro-preview-03-25", // Default - Enhanced thinking and reasoning
-  
-  // Gemini 2.0 models
-  "gemini-2.0-flash": "models/gemini-2.0-flash", // Next generation features, speed, thinking
-  "gemini-2.0-flash-lite": "models/gemini-2.0-flash-lite", // Cost efficiency and low latency
-  
-  // Gemini 1.5 models
-  "gemini-1.5-flash": "models/gemini-1.5-flash", // Fast and versatile performance
-  "gemini-1.5-flash-8b": "models/gemini-1.5-flash-8b", // High volume and lower intelligence tasks
-  "gemini-1.5-pro": "models/gemini-1.5-pro", // Complex reasoning tasks requiring more intelligence
-  
-  // Legacy models
-  "gemini-pro": "models/gemini-pro", // Gemini 1.0 Pro
-  "gemini-1.0-pro": "models/gemini-pro", // Legacy name mapping
-
-  // Embeddings
-  "gemini-embedding-exp": "models/gemini-embedding-exp", // Text embeddings
-};
-
-// Default model to use
-const DEFAULT_MODEL = "gemini-2.5-pro-preview-03-25";
 
 // Message format for Gemini API
 export interface GeminiMessage {

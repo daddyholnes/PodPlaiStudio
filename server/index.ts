@@ -2,6 +2,10 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
+// Debug environment variables
+console.log("GEMINI_API_KEY exists:", !!process.env.GEMINI_API_KEY);
+console.log("Environment variables:", Object.keys(process.env).filter(key => !key.includes('KEY') && !key.includes('TOKEN')));
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

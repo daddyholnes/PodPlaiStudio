@@ -6,6 +6,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { generateContent, generateContentStream, countTokens } from "./gemini";
+import { isApiKeyConfigured, getMaskedApiKey } from "./config";
 import { 
   MessageRoleEnum, 
   MessageRole,
@@ -426,13 +427,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get API status and check if API key is configured
   app.get('/api/status', (req, res) => {
-    const apiKeyConfigured = !!process.env.GEMINI_API_KEY;
     res.json({ 
       status: 'ok', 
-      apiKeyConfigured,
-      apiKeyMasked: apiKeyConfigured ? 
-        `GEMINI_${'*'.repeat(process.env.GEMINI_API_KEY!.length - 7)}` : 
-        undefined
+      apiKeyConfigured: isApiKeyConfigured,
+      apiKeyMasked: isApiKeyConfigured ? getMaskedApiKey() : undefined
     });
   });
   
