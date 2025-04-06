@@ -16,8 +16,7 @@ import { Track } from 'livekit-client';
 import './VideoChat.css';
 import { useLiveKit } from './LiveKitProvider';
 
-const VideoChat = () => {
-  const { roomName, identity, isConnected } = useLiveKit();
+const VideoChat = ({ token, roomName }) => {
   const { room } = useRoom();
   const { localParticipant } = useLocalParticipant();
   const participants = useParticipants();
@@ -41,7 +40,7 @@ const VideoChat = () => {
     }
   }, [room, localParticipant, participants, tracks]);
 
-  if (!isConnected) {
+  if (!room) {
     return (
       <div className="video-container">
         <div className="video-status">
