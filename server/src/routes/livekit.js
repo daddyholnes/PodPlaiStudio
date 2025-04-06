@@ -40,7 +40,13 @@ const setupLiveKitRoutes = (app) => {
       });
 
       // Grant permissions to the room
-      token.addGrant({ roomJoin: true, room });
+      token.addGrant({ 
+        roomJoin: true, 
+        room,
+        canPublish: true,
+        canSubscribe: true,
+        canPublishData: true
+      });
 
       // Generate the JWT token
       const jwt = token.toJwt();
@@ -51,6 +57,44 @@ const setupLiveKitRoutes = (app) => {
     } catch (error) {
       console.error('Error generating LiveKit token:', error);
       res.status(500).json({ error: 'Failed to generate token: ' + error.message });
+    }
+  });
+  
+  // Add room creation endpoint
+  app.post('/livekit/rooms', async (req, res) => {
+    try {
+      const { roomName } = req.body;
+      
+      if (!roomName) {
+        return res.status(400).json({ error: 'Room name is required' });
+      }
+      
+      const apiKey = process.env.LIVEKIT_API_KEY;
+      const apiSecret = process.env.LIVEKIT_API_SECRET;
+      const livekitHost = process.env.LIVEKIT_SERVER_URL;
+      
+      if (!apiKey || !apiSecret || !livekitHost) {
+        console.error('LiveKit API credentials not configured');
+        return res.status(500).json({ error: 'LiveKit API credentials not configured' });
+      }
+      
+      // For this demo, we'll just return a success message
+      // In a production environment, you would connect to the LiveKit server
+      // and create the room using the RoomService
+      console.log(`Room creation requested: ${roomName}`);
+      
+      res.json({ 
+        success: true, 
+        room: {
+          name: roomName,
+          emptyTimeout: 10 * 60, // 10 minutes
+          maxParticipants: 20,
+          creationTime: new Date().toISOString()
+        } 
+      });
+    } catch (error) {
+      console.error('Error creating room:', error);
+      res.status(500).json({ error: 'Failed to create room: ' + error.message });
     }
   });
 

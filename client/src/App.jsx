@@ -1,9 +1,10 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, Suspense } from 'react';
 import './App.css';
 import { LiveKitRoom } from '@livekit/components-react';
 import LiveKitProvider from './components/LiveKit/LiveKitProvider';
 import VideoChat from './components/LiveKit/VideoChat';
 import ScreenShare from './components/LiveKit/ScreenShare';
+import LiveKitTest from './components/LiveKit/LiveKitTest';
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -50,6 +51,10 @@ const App = () => {
             participantName={username}
           >
             <div className="video-section">
+              <div style={{ marginBottom: '20px' }}>
+                <h2>LiveKit Video Chat Demo</h2>
+                <LiveKitTest />
+              </div>
               <VideoChat />
               <ScreenShare />
             </div>

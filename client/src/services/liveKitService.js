@@ -33,7 +33,7 @@ export const fetchRoomToken = async (roomName, participantName) => {
 export const createRoom = async ({ roomName }) => {
   try {
     console.log(`Creating room: ${roomName}`);
-    const response = await axios.post(`${API_BASE_URL}/rooms`, { roomName });
+    const response = await axios.post('/livekit/rooms', { roomName });
     console.log('Room created:', response.data);
     return response.data.room;
   } catch (error) {
