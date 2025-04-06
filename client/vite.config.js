@@ -1,3 +1,4 @@
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -51,7 +52,13 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       }
-    }
+    },
+    allowedHosts: [
+      'localhost',
+      '*.replit.dev',
+      '*.spock.replit.dev',
+      'f5ae1bc9-a7a7-4344-84a2-38b2efea7b7c-00-xewljbbs67np.spock.replit.dev'
+    ]
   },
   preview: {
     port: 5050,
