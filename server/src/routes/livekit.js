@@ -1,101 +1,77 @@
+const express = require('express');
+const { AccessToken } = require('livekit-server-sdk');
+const axios = require('axios');
+const router = express.Router();
 
-import { AccessToken } from 'livekit-server-sdk';
+// LiveKit server details - these should be set in your environment variables
+const livekitHost = process.env.LIVEKIT_HOST || 'wss://your-livekit-server.example.com';
+const apiKey = process.env.LIVEKIT_API_KEY || 'devkey';
+const apiSecret = process.env.LIVEKIT_API_SECRET || 'secret';
 
-const setupLiveKitRoutes = (app) => {
-  const apiKey = process.env.LIVEKIT_API_KEY || 'devkey';
-  const apiSecret = process.env.LIVEKIT_API_SECRET || 'secret';
-  const livekitHost = process.env.LIVEKIT_SERVER_URL || 'wss://dartopia-gvu1e64v.livekit.cloud';
+// Create a new room
+router.post('/room', async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: 'Room name is required' });
+    }
 
-  if (!process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET || !process.env.LIVEKIT_SERVER_URL) {
-    console.warn('LiveKit environment variables not set properly, using default values for development');
+    console.log(`Creating room: ${name}`);
+
+    // Since we're using a simulated environment, we'll just return success
+    // In a real implementation, you would create a room via LiveKit API
+    // Example with real LiveKit API:
+    /*
+    const response = await axios.post(`https://${livekitHost}/twirp/livekit.RoomService/CreateRoom`, {
+      name,
+      empty_timeout: 60, // Room will be deleted after 60 seconds with no participants
+    }, {
+      headers: {
+        'Authorization': `Bearer ${generateAPIKey()}`
+      }
+    });
+    */
+
+    return res.status(200).json({ name });
+  } catch (error) {
+    console.error('Error creating room:', error);
+    return res.status(500).json({ error: 'Failed to create room' });
   }
+});
 
-  // LiveKit token generation route
-  app.get('/livekit/token', (req, res) => {
-    try {
-      const { identity, room } = req.query;
+// Generate a token for a participant to join a room
+router.post('/token', (req, res) => {
+  try {
+    const { room, identity } = req.body;
 
-      if (!identity || !room) {
-        return res.status(400).json({ error: 'Missing required parameters: identity and room' });
-      }
-
-      console.log(`Generating token for ${identity} in room ${room}`);
-
-      // Create a new access token with the API key and secret
-      const token = new AccessToken(apiKey, apiSecret, {
-        identity: identity,
-        name: identity // Use identity as the participant name
-      });
-
-      // Grant permissions to the room
-      token.addGrant({ 
-        roomJoin: true, 
-        room,
-        canPublish: true,
-        canSubscribe: true,
-        canPublishData: true
-      });
-
-      // Generate the JWT token
-      const jwt = token.toJwt();
-      console.log(`Generated LiveKit token for ${identity} in room ${room}`);
-      
-      res.json({ token: jwt, url: livekitHost });
-    } catch (error) {
-      console.error('Error generating token:', error);
-      res.status(500).json({ error: 'Failed to generate token: ' + error.message });
+    if (!room || !identity) {
+      return res.status(400).json({ error: 'Room name and identity are required' });
     }
-  });
 
-  // Create room endpoint
-  app.post('/livekit/rooms', async (req, res) => {
-    try {
-      const { roomName } = req.body;
-      
-      if (!roomName) {
-        return res.status(400).json({ error: 'Missing required parameter: roomName' });
-      }
-      
-      console.log(`Creating room: ${roomName}`);
-      
-      // In a production environment, you would use the LiveKit API to create a room
-      // For now, we'll just return success since we're using default rooms
-      res.json({ 
-        name: roomName,
-        emptyTimeout: 10 * 60,
-        maxParticipants: 20,
-        creationTime: new Date().toISOString(),
-        status: 'created'
-      });
-    } catch (error) {
-      console.error('Error creating room:', error);
-      res.status(500).json({ error: 'Failed to create room: ' + error.message });
-    }
-  });
+    console.log(`Generating token for ${identity} in room ${room}`);
 
-  // List rooms endpoint
-  app.get('/livekit/rooms', async (req, res) => {
-    try {
-      // In a production environment, you would fetch the rooms from LiveKit
-      // For now, return a mock response
-      res.json({
-        rooms: [
-          {
-            name: 'default-room',
-            emptyTimeout: 10 * 60,
-            maxParticipants: 20,
-            creationTime: new Date().toISOString(),
-            numParticipants: 0
-          }
-        ]
-      });
-    } catch (error) {
-      console.error('Error listing rooms:', error);
-      res.status(500).json({ error: 'Failed to list rooms: ' + error.message });
-    }
-  });
+    // Create a new access token
+    const token = new AccessToken(apiKey, apiSecret, {
+      identity: identity,
+    });
 
-  console.log('LiveKit routes initialized');
-};
+    // Grant permissions for the room
+    token.addGrant({
+      roomJoin: true,
+      room,
+      canPublish: true,
+      canSubscribe: true,
+    });
 
-export { setupLiveKitRoutes };
+    // Generate the JWT token
+    const jwt = token.toJwt();
+    console.log(`Generated LiveKit token for ${identity} in room ${room}`);
+
+    return res.status(200).json({ token: jwt });
+  } catch (error) {
+    console.error('Error generating token:', error);
+    return res.status(500).json({ error: 'Failed to generate token' });
+  }
+});
+
+module.exports = router;

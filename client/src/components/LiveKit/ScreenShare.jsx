@@ -36,3 +36,41 @@ const ScreenShare = () => {
 };
 
 export default ScreenShare;
+import React, { useState } from 'react';
+import { useLocalParticipant, Track } from 'livekit-react';
+
+const ScreenShare = () => {
+  const { localParticipant } = useLocalParticipant();
+  const [isSharing, setIsSharing] = useState(false);
+
+  const toggleScreenShare = async () => {
+    if (!localParticipant) return;
+
+    try {
+      if (isSharing) {
+        // Stop screen sharing
+        await localParticipant.stopScreenShare();
+        setIsSharing(false);
+      } else {
+        // Start screen sharing
+        await localParticipant.enableScreenShare();
+        setIsSharing(true);
+      }
+    } catch (error) {
+      console.error('Error toggling screen share:', error);
+    }
+  };
+
+  return (
+    <div className="screen-share-container">
+      <button 
+        className={`screen-share-button ${isSharing ? 'active' : ''}`}
+        onClick={toggleScreenShare}
+      >
+        {isSharing ? 'Stop Sharing' : 'Share Screen'}
+      </button>
+    </div>
+  );
+};
+
+export default ScreenShare;

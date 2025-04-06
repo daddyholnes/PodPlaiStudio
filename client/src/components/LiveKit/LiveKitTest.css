@@ -1,0 +1,116 @@
+
+.livekit-test-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.livekit-test-container h1 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.join-form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.join-form {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 500px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.join-button {
+  background: #4285f4;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.3s;
+}
+
+.join-button:hover {
+  background: #3367d6;
+}
+
+.join-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #ea4335;
+  margin-top: 15px;
+  text-align: center;
+}
+
+.video-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.leave-button {
+  background: #ea4335;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 20px;
+  align-self: center;
+}
+
+.leave-button:hover {
+  background: #d23f31;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .livekit-test-container h1 {
+    color: #eee;
+  }
+  
+  .join-form {
+    background: #2a2a2a;
+    color: #eee;
+  }
+  
+  .form-group input {
+    background-color: #333;
+    color: #eee;
+    border-color: #444;
+  }
+}

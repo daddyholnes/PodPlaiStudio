@@ -2,86 +2,78 @@
 import React, { useState } from 'react';
 import { useLiveKit } from './LiveKitProvider';
 import VideoChat from './VideoChat';
+import './LiveKitTest.css';
 
 const LiveKitTest = () => {
-  const [roomName, setRoomName] = useState('');
-  const [participantName, setParticipantName] = useState('');
-  const [activeRoom, setActiveRoom] = useState('');
-  const [activeParticipant, setActiveParticipant] = useState('');
-  const [showVideoChat, setShowVideoChat] = useState(false);
-  const { createAndJoinRoom, isConnecting, error } = useLiveKit();
+  const { isConnected, createAndJoinRoom, leaveRoom, error } = useLiveKit();
+  const [roomInput, setRoomInput] = useState('');
+  const [nameInput, setNameInput] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
 
-  const handleCreateRoom = async () => {
+  const handleCreateRoom = async (e) => {
+    e.preventDefault();
+    if (!roomInput || !nameInput) return;
+    
+    setIsJoining(true);
     try {
-      if (!roomName) {
-        alert('Please enter a room name');
-        return;
-      }
-      
-      if (!participantName) {
-        alert('Please enter your name');
-        return;
-      }
-      
-      const createdRoom = await createAndJoinRoom(roomName);
-      setActiveRoom(createdRoom);
-      setActiveParticipant(participantName);
-      setShowVideoChat(true);
+      await createAndJoinRoom(roomInput, nameInput);
     } catch (err) {
-      console.error("Error creating room:", err);
+      console.error('Error creating room:', err);
+    } finally {
+      setIsJoining(false);
     }
   };
 
+  const handleLeaveRoom = () => {
+    leaveRoom();
+  };
+
   return (
-    <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">LiveKit Test</h2>
+    <div className="livekit-test-container">
+      <h1>LiveKit Test</h1>
       
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          Error: {error}
-        </div>
-      )}
-      
-      {!showVideoChat ? (
-        <div className="space-y-4">
-          <div>
-            <label className="block mb-2">Room Name:</label>
-            <input
-              type="text"
-              value={roomName}
-              onChange={(e) => setRoomName(e.target.value)}
-              className="w-full p-2 border rounded"
-              placeholder="Enter room name"
-            />
-          </div>
-          
-          <div>
-            <label className="block mb-2">Your Name:</label>
-            <input
-              type="text"
-              value={participantName}
-              onChange={(e) => setParticipantName(e.target.value)}
-              className="w-full p-2 border rounded"
-              placeholder="Enter your name"
-            />
-          </div>
-          
-          <button
-            onClick={handleCreateRoom}
-            disabled={isConnecting || !roomName || !participantName}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300"
-          >
-            {isConnecting ? 'Creating...' : 'Create Room'}
-          </button>
+      {!isConnected ? (
+        <div className="join-form-container">
+          <form onSubmit={handleCreateRoom} className="join-form">
+            <div className="form-group">
+              <label htmlFor="room-name">Room Name:</label>
+              <input
+                id="room-name"
+                type="text"
+                value={roomInput}
+                onChange={(e) => setRoomInput(e.target.value)}
+                placeholder="Enter room name"
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="user-name">Your Name:</label>
+              <input
+                id="user-name"
+                type="text"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder="Enter your name"
+                required
+              />
+            </div>
+            
+            <button 
+              type="submit" 
+              className="join-button"
+              disabled={isJoining || !roomInput || !nameInput}
+            >
+              {isJoining ? 'Connecting...' : 'Join Room'}
+            </button>
+            
+            {error && <p className="error-message">{error}</p>}
+          </form>
         </div>
       ) : (
-        <div className="space-y-4">
-          <VideoChat roomName={activeRoom} identity={activeParticipant} />
-          
-          <button
-            onClick={() => setShowVideoChat(false)}
-            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-          >
+        <div className="video-container">
+          <VideoChat />
+          <button onClick={handleLeaveRoom} className="leave-button">
             Leave Room
           </button>
         </div>

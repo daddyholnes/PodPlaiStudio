@@ -1,0 +1,114 @@
+
+.video-chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: #1a1a1a;
+  color: white;
+}
+
+.video-chat-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  font-size: 1.2rem;
+  color: #888;
+}
+
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  padding: 16px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.video-tile {
+  position: relative;
+  aspect-ratio: 16/9;
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.local-participant {
+  border: 2px solid #4285f4;
+}
+
+.video-wrapper {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  background-color: #3a3a3a;
+  font-size: 2.5rem;
+  color: #ddd;
+}
+
+.participant-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px;
+  background-color: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.muted-indicator {
+  margin-left: 6px;
+}
+
+.video-controls {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  gap: 16px;
+  background-color: #2a2a2a;
+}
+
+.control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background-color: #444;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.control-button:hover {
+  background-color: #555;
+}
+
+.control-button.muted,
+.control-button.camera-off {
+  background-color: #ea4335;
+}
+
+.control-button.leave {
+  background-color: #ea4335;
+  width: auto;
+  padding: 0 20px;
+  border-radius: 24px;
+}
