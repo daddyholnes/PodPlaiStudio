@@ -87,8 +87,17 @@ export const LiveKitProvider = ({ children }) => {
           serverUrl={import.meta.env.VITE_LIVEKIT_SERVER_URL || 'wss://demo.livekit.cloud'}
           token={token}
           connectOptions={{ autoSubscribe: true }}
-          onConnected={() => setIsConnected(true)}
-          onDisconnected={() => setIsConnected(false)}
+          onConnected={() => {
+            console.log('Connected to LiveKit room');
+            setIsConnected(true);
+          }}
+          onDisconnected={() => {
+            console.log('Disconnected from LiveKit room');
+            setIsConnected(false);
+          }}
+          onError={(error) => {
+            console.error('LiveKit connection error:', error);
+          }}
           audio={true}
           video={true}
         >

@@ -80,10 +80,10 @@ if (fs.existsSync(publicPath)) {
 }
 
 // Import LiveKit routes
-import { setupLiveKitRoutes } from './routes/livekit.js';
+import livekitRoutes from './routes/livekit.js';
 
 // Set up routes
-setupLiveKitRoutes(app); // Use the properly implemented LiveKit routes
+app.use('/api/livekit', livekitRoutes); // Use the LiveKit routes
 
 // SPA fallback route
 app.get('*', (req, res) => {
