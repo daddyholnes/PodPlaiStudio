@@ -53,7 +53,7 @@ app.get('/assets/fonts/:fontFile', (req, res) => {
     path.join(__dirname, '../../client/dist/assets/fonts', req.params.fontFile),
     path.join(__dirname, '../../client/public/assets/fonts', req.params.fontFile)
   ];
-  
+
   // Try to find the font in either location
   let fontFound = false;
   for (const fontPath of fontPaths) {
@@ -65,7 +65,7 @@ app.get('/assets/fonts/:fontFile', (req, res) => {
       break;
     }
   }
-  
+
   // If font not found, send 404
   if (!fontFound) {
     res.status(404).send('Font not found');
@@ -77,8 +77,8 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(clientDistPath, 'index.html'));
 });
 
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+server.listen(5000, '0.0.0.0', () => {
+  console.log(`Server is running on port 5000`);
 });
 
 // Your existing socket.io and route handling code here

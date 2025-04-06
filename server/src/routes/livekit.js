@@ -7,7 +7,7 @@ const { AccessToken, RoomServiceClient } = require('livekit-server-sdk');
 const setupLiveKitRoutes = (app) => {
   const apiKey = process.env.LIVEKIT_API_KEY || 'devkey';
   const apiSecret = process.env.LIVEKIT_API_SECRET || 'devsecret';
-  const livekitUrl = process.env.LIVEKIT_SERVER_URL || 'http://localhost:7880';
+  const livekitUrl = process.env.LIVEKIT_SERVER_URL || 'http://0.0.0.0:7880';
   
   if (!process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET || !process.env.LIVEKIT_SERVER_URL) {
     console.warn('LiveKit environment variables not set properly, using default values for development');
