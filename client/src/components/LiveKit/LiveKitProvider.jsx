@@ -1,21 +1,55 @@
-import { LiveKitRoom } from '@livekit/components-react';
-import React from 'react';
 
-const LiveKitProvider = ({ children }) => {
-  // These would come from your server
-  const token = "your-token"; // Will be provided by server
-  const serverUrl = "wss://your-livekit-server"; // Your LiveKit server URL
+import React, { useState, useEffect } from 'react';
+import { RoomProvider } from '@livekit/components-react';
+import { fetchRoomToken } from '../../services/liveKitService';
+
+const LiveKitProvider = ({ children, token, serverUrl, room = 'default-room' }) => {
+  const [roomToken, setRoomToken] = useState(token);
+  const [loading, setLoading] = useState(!token);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const getToken = async () => {
+      if (token) return; // Skip if token is provided through props
+      
+      try {
+        setLoading(true);
+        const fetchedToken = await fetchRoomToken(room);
+        setRoomToken(fetchedToken);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch LiveKit token:', err);
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    getToken();
+  }, [token, room]);
+
+  if (loading) {
+    return <div className="livekit-loading">Loading LiveKit connection...</div>;
+  }
+
+  if (error || !roomToken) {
+    return (
+      <div className="livekit-error">
+        <p>Failed to initialize LiveKit: {error?.message || 'No token available'}</p>
+      </div>
+    );
+  }
 
   return (
-    <LiveKitRoom
-      token={token}
-      serverUrl={serverUrl}
-      connect={true}
-      audio={true}
-      video={true}
+    <RoomProvider
+      serverUrl={serverUrl || import.meta.env.VITE_LIVEKIT_URL}
+      token={roomToken}
+      connectOptions={{
+        autoSubscribe: true
+      }}
     >
       {children}
-    </LiveKitRoom>
+    </RoomProvider>
   );
 };
 
@@ -27,22 +61,11 @@ export const withLiveKitProvider = (Component) => {
     const serverUrl = props.serverUrl || import.meta.env.VITE_LIVEKIT_URL;
     const roomName = props.room || 'default-room';
     
-    if (!token || !serverUrl) {
-      console.warn('LiveKit token or server URL not provided. Component will render without LiveKit context.');
-      
-      return (
-        <div className="livekit-context-missing">
-          <Component {...props} liveKitAvailable={false} />
-        </div>
-      );
-    }
-    
     return (
       <LiveKitProvider 
         token={token} 
         serverUrl={serverUrl}
         room={roomName}
-        onError={(error) => console.error('LiveKit error:', error)}
       >
         <Component {...props} liveKitAvailable={true} />
       </LiveKitProvider>

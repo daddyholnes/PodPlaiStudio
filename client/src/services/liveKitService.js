@@ -11,6 +11,7 @@ const API_BASE_URL = '/api/livekit';
  */
 export const fetchRoomToken = async (roomName = 'default-room', participantName = `user-${Date.now()}`) => {
   try {
+    console.log(`Fetching token for room: ${roomName}, participant: ${participantName}`);
     const response = await axios.post(`${API_BASE_URL}/token`, {
       roomName,
       participantName
