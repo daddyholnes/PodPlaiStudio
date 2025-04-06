@@ -1,75 +1,68 @@
 
-import React, { useState, useEffect } from 'react';
-import { fetchRoomToken } from '../../services/liveKitService';
+import React from 'react';
+import { LiveKitRoom } from '@livekit/components-react';
+import '@livekit/components-styles';
 
 const LiveKitProvider = ({ children, roomName, participantName }) => {
+  // For simplicity, we'll hardcode the LiveKit server URL in this component
+  // In production, you'd want to use environment variables
+  const serverUrl = 'wss://dartopia-gvu1e64v.livekit.cloud';
+  
   const [token, setToken] = useState(null);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!roomName || !participantName) {
-      console.error('Room name or participant name is missing');
+      setError("Room name and participant name are required");
+      setIsLoading(false);
       return;
     }
 
     const getToken = async () => {
-      setIsConnecting(true);
       try {
-        console.log(`Fetching token for room: ${roomName}, participant: ${participantName}`);
-        const tokenData = await fetchRoomToken(roomName, participantName);
+        const response = await fetch(`/livekit/token?room=${roomName}&identity=${participantName}`);
+        const data = await response.json();
         
-        if (tokenData && tokenData.token) {
-          console.log('Token received for room:', roomName);
-          setToken(tokenData.token);
-          setIsConnected(true);
+        if (data.token) {
+          setToken(data.token);
         } else {
           throw new Error('Invalid token response');
         }
       } catch (err) {
-        console.error('Failed to fetch LiveKit token:', err);
+        console.error('Failed to fetch token:', err);
         setError(err.message || 'Failed to connect to LiveKit');
       } finally {
-        setIsConnecting(false);
+        setIsLoading(false);
       }
     };
 
     getToken();
   }, [roomName, participantName]);
 
-  if (isConnecting) {
-    return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <p>Connecting to LiveKit room...</p>
-      </div>
-    );
+  if (isLoading) {
+    return <div>Loading LiveKit connection...</div>;
   }
 
   if (error) {
-    return (
-      <div style={{ padding: '20px', color: 'red', textAlign: 'center' }}>
-        <p>Error connecting to LiveKit: {error}</p>
-        <p>Please check your configuration and try again.</p>
-      </div>
-    );
+    return <div style={{ color: 'red' }}>Error: {error}</div>;
   }
 
-  if (!isConnected) {
-    return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <p>Waiting for LiveKit connection...</p>
-      </div>
-    );
+  if (!token) {
+    return <div>Waiting for LiveKit token...</div>;
   }
 
   return (
-    <div className="livekit-provider">
-      <div style={{ padding: '10px', backgroundColor: '#e6f7ff', marginBottom: '15px', borderRadius: '4px' }}>
-        <p style={{ margin: 0 }}>Connected to LiveKit room: <strong>{roomName}</strong> as <strong>{participantName}</strong></p>
-      </div>
+    <LiveKitRoom
+      video={true}
+      audio={true}
+      token={token}
+      serverUrl={serverUrl}
+      data-lk-theme="default"
+      style={{ height: '100%' }}
+    >
       {children}
-    </div>
+    </LiveKitRoom>
   );
 };
 
