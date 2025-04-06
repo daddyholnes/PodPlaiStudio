@@ -1,81 +1,23 @@
-import React, { useState, useEffect, createContext, useCallback } from 'react';
-import { RoomProvider } from '@livekit/components-react';
-import XtermTerminal from './components/Terminal/XtermTerminal';
-import ScreenShare from './components/LiveKit/ScreenShare';
-import { createTerminalSession } from './services/terminalService';
+import React, { useState, useCallback, useEffect } from 'react';
 import './App.css';
-//import VideoChat from './components/LiveKit/VideoChat'; //Import the VideoChat component
-
-// Create contexts for sharing state
-export const TerminalContext = createContext(null);
-export const LiveKitContext = createContext(null);
+import { LiveKitRoom } from '@livekit/components-react';
+import LiveKitProvider from './components/LiveKit/LiveKitProvider';
+import VideoChat from './components/LiveKit/VideoChat';
+import ScreenShare from './components/LiveKit/ScreenShare';
 
 const App = () => {
-  // Terminal state
-  const [terminalSession, setTerminalSession] = useState(null);
-  const [terminalError, setTerminalError] = useState(null);
-  const [terminalLoading, setTerminalLoading] = useState(false);
-
-  // LiveKit state
-  const [liveKitRoom, setLiveKitRoom] = useState(null);
-  const [liveKitToken, setLiveKitToken] = useState(null);
-  const [liveKitError, setLiveKitError] = useState(null);
-  const [liveKitLoading, setLiveKitLoading] = useState(false);
-
-  // App state
   const [isLoading, setIsLoading] = useState(true);
   const [appError, setAppError] = useState(null);
+  const [livekitReady, setLivekitReady] = useState(false);
+  const [roomName] = useState('default-room');
+  const [username] = useState(`user-${Date.now().toString(36)}`);
 
-  // Initialize terminal session
-  const initTerminal = useCallback(async () => {
-    if (terminalSession) return; // Already initialized
-
-    setTerminalLoading(true);
-    try {
-      const session = await createTerminalSession();
-      console.log('Terminal session created:', session);
-      setTerminalSession(session);
-      setTerminalError(null);
-    } catch (error) {
-      console.error('Failed to create terminal session:', error);
-      setTerminalError(error);
-      // Create a fallback session
-      setTerminalSession({
-        id: `fallback-${Date.now()}`,
-        status: 'fallback'
-      });
-    } finally {
-      setTerminalLoading(false);
-    }
-  }, [terminalSession]);
-
-  // Initialize LiveKit room -  This needs to be updated to fetch a token and potentially handle room creation
-  const initLiveKit = useCallback(async () => {
-    if (liveKitRoom) return; // Already initialized
-
-    setLiveKitLoading(true);
-    try {
-      // Replace this with your actual token retrieval mechanism
-      const token = await fetch('/api/livekit/token').then(res => res.json());
-      setLiveKitToken(token);
-      console.log('LiveKit token fetched:', token);
-    } catch (error) {
-      console.error('Failed to initialize LiveKit:', error);
-      setLiveKitError(error);
-    } finally {
-      setLiveKitLoading(false);
-    }
-  }, []);
-
-  // Initialize app
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
       try {
-        await Promise.allSettled([
-          initTerminal(),
-          initLiveKit()
-        ]);
+        // Initialize app
+        setLivekitReady(true);
       } catch (error) {
         console.error('App initialization error:', error);
         setAppError(error);
@@ -85,91 +27,40 @@ const App = () => {
     };
 
     init();
-  }, [initTerminal, initLiveKit]);
-
-  // Handle terminal session creation from child components
-  const handleTerminalSessionCreate = useCallback((session) => {
-    if (!session) return;
-    setTerminalSession(session);
-    console.log('Terminal session updated:', session);
   }, []);
 
-  // Show loading state
   if (isLoading) {
-    return (
-      <div className="app-loading">
-        <div className="spinner"></div>
-        <p>Initializing application...</p>
-      </div>
-    );
+    return <div className="loading">Loading application...</div>;
   }
 
-  // Show error state
   if (appError) {
-    return (
-      <div className="app-error">
-        <h1>Failed to initialize application</h1>
-        <p>{appError.message}</p>
-        <button onClick={() => window.location.reload()}>Reload Application</button>
-      </div>
-    );
+    return <div className="error">Error: {appError.message}</div>;
   }
 
-  // Render the application with proper context providers
   return (
     <div className="app-container">
-      {/* Terminal Context Provider */}
-      <TerminalContext.Provider value={{ 
-        session: terminalSession, 
-        setSession: handleTerminalSessionCreate,
-        error: terminalError,
-        isLoading: terminalLoading
-      }}>
-        {/* LiveKit Context Provider */}
-        <LiveKitContext.Provider value={{
-          token: liveKitToken,
-          room: liveKitRoom,
-          setRoom: setLiveKitRoom,
-          error: liveKitError,
-          isLoading: liveKitLoading
-        }}>
-          {/* LiveKit Room Provider (if token is available) */}
-          {liveKitToken ? (
-            <RoomProvider
-              serverUrl={import.meta.env.VITE_LIVEKIT_SERVER_URL || "ws://localhost:7880"}
-              token={liveKitToken}
-              options={{
-                adaptiveStream: true,
-                dynacast: true
-              }}
-            >
-              <div className="main-content">
-                {/* Application Components */}
-                <div className="video-collaboration-section">
-                  {/*This is where VideoChat component would go.  You need to create this component and ensure it handles LiveKit interactions correctly*/}
-                  {/*<VideoChat roomName="default-room" />*/}
-                </div>
-                <div className="screen-share-container">
-                  <ScreenShare />
-                </div>
+      <header className="app-header">
+        <h1>LiveKit Video Chat</h1>
+      </header>
 
-                <div className="terminal-container">
-                  <XtermTerminal 
-                    sessionId={terminalSession?.id} 
-                    onSessionCreate={handleTerminalSessionCreate} 
-                  />
-                </div>
-              </div>
-            </RoomProvider>
-          ) : (
-            <div className="livekit-unavailable">
-              <p>LiveKit functionality is currently unavailable.</p>
-              <p>{liveKitError?.message || "Token not provided"}</p>
-              <button onClick={initLiveKit}>Retry Connection</button>
+      <main className="app-content">
+        {livekitReady ? (
+          <LiveKitProvider
+            roomName={roomName}
+            participantName={username}
+          >
+            <div className="video-section">
+              <VideoChat />
+              <ScreenShare />
             </div>
-          )}
-        </LiveKitContext.Provider>
-      </TerminalContext.Provider>
+          </LiveKitProvider>
+        ) : (
+          <div className="livekit-unavailable">
+            <p>LiveKit functionality is currently unavailable.</p>
+            <button onClick={() => setLivekitReady(true)}>Retry Connection</button>
+          </div>
+        )}
+      </main>
     </div>
   );
 };

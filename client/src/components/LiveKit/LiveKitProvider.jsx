@@ -1,33 +1,26 @@
-
-import React, { useState, useEffect, createContext, useContext } from 'react';
-import { Room } from 'livekit-client';
+import React, { useState, useEffect } from 'react';
 import { LiveKitRoom } from '@livekit/components-react';
 import { fetchRoomToken } from '../../services/liveKitService';
 
-// Create a context for LiveKit data
-export const LiveKitContext = createContext(null);
-
-export const useLiveKit = () => useContext(LiveKitContext);
-
-const LiveKitProvider = ({ children, roomName = 'default-room' }) => {
+const LiveKitProvider = ({ children, roomName = 'default-room', participantName }) => {
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [room, setRoom] = useState(null);
-  
-  // Get server URL from environment variables
-  const serverUrl = import.meta.env.VITE_LIVEKIT_SERVER_URL || 'ws://localhost:7880';
-  
+
+  // Use the VITE environment variable or fall back to development URL
+  const serverUrl = import.meta.env.VITE_LIVEKIT_SERVER_URL || 'wss://dartopia-gvu1e64v.livekit.cloud';
+
   useEffect(() => {
-    async function initLiveKit() {
+    const initLiveKit = async () => {
       setIsLoading(true);
       try {
-        // Generate a default identity using timestamp
-        const identity = `user-${Date.now().toString(36)}`;
-        
-        // Request token for this room and identity
+        // Generate identity if not provided
+        const identity = participantName || `user-${Date.now().toString(36)}`;
+
+        // Get token for this room and participant
         const tokenValue = await fetchRoomToken(roomName, identity);
-        console.log('Token received for LiveKit room:', roomName);
+        console.log('Token received for room:', roomName);
+
         setToken(tokenValue);
         setError(null);
       } catch (err) {
@@ -36,50 +29,37 @@ const LiveKitProvider = ({ children, roomName = 'default-room' }) => {
       } finally {
         setIsLoading(false);
       }
-    }
-    
+    };
+
     initLiveKit();
-  }, [roomName]);
-  
+  }, [roomName, participantName]);
+
   if (isLoading) {
-    return <div className="livekit-loading">Connecting to LiveKit...</div>;
+    return <div className="livekit-loading">Loading LiveKit connection...</div>;
   }
-  
+
   if (error || !token) {
     return (
       <div className="livekit-error">
-        <p>LiveKit connection error: {error || 'No token available'}</p>
+        <p>Error connecting to LiveKit: {error || 'No token available'}</p>
         <button onClick={() => window.location.reload()}>Retry</button>
       </div>
     );
   }
-  
+
   return (
     <LiveKitRoom
       token={token}
       serverUrl={serverUrl}
-      // Start with audio/video off
       audio={false}
       video={false}
       connectOptions={{
         autoSubscribe: true
       }}
-      onConnected={(room) => {
-        console.log('Connected to LiveKit room:', room.name);
-        setRoom(room);
-      }}
-      onDisconnected={() => {
-        console.log('Disconnected from LiveKit room');
-        setRoom(null);
-      }}
-      onError={(err) => {
-        console.error('LiveKit connection error:', err);
-        setError(err.message);
-      }}
+      onConnected={() => console.log('Connected to LiveKit room:', roomName)}
+      onError={(err) => console.error('LiveKit connection error:', err)}
     >
-      <LiveKitContext.Provider value={{ room, isConnected: !!room }}>
-        {children}
-      </LiveKitContext.Provider>
+      {children}
     </LiveKitRoom>
   );
 };

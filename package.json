@@ -23,8 +23,6 @@
     "clean": "rimraf node_modules && rimraf client/node_modules && rimraf server/node_modules"
   },
   "devDependencies": {
-    "concurrently": "^8.2.0",
-    "rimraf": "^5.0.5",
     "@replit/vite-plugin-cartographer": "^0.0.11",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
     "@tailwindcss/typography": "^0.5.15",
@@ -39,9 +37,11 @@
     "@types/ws": "^8.5.13",
     "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^8.2.0",
     "drizzle-kit": "^0.30.4",
     "esbuild": "^0.25.0",
     "postcss": "^8.4.47",
+    "rimraf": "^5.0.5",
     "tailwindcss": "^3.4.14",
     "tsx": "^4.19.1",
     "typescript": "5.6.3",
@@ -50,6 +50,8 @@
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
     "@jridgewell/trace-mapping": "^0.3.25",
+    "@livekit/components-react": "^2.9.0",
+    "@livekit/components-styles": "^1.1.5",
     "@neondatabase/serverless": "^0.10.4",
     "@radix-ui/react-accordion": "^1.2.1",
     "@radix-ui/react-alert-dialog": "^1.1.2",
@@ -97,6 +99,7 @@
     "express-session": "^1.18.1",
     "framer-motion": "^11.13.1",
     "input-otp": "^1.2.4",
+    "livekit-client": "^2.9.9",
     "lucide-react": "^0.453.0",
     "memorystore": "^1.6.7",
     "multer": "^1.4.5-lts.2",
