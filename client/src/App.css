@@ -1,0 +1,163 @@
+/* App.css - Basic styling for PodPlai Studio */
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.join-room-form {
+  max-width: 400px;
+  margin: 100px auto;
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+button {
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.workspace {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background-color: #2c2c2c;
+  color: white;
+}
+
+.header-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.panel-toggle {
+  background-color: transparent;
+  border: 1px solid #555;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.file-explorer-panel {
+  width: 250px;
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+  overflow: auto;
+  border-right: 1px solid #444;
+}
+
+.editor-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.editor-container {
+  flex: 1;
+  overflow: hidden;
+}
+
+.terminal-panel {
+  position: relative;
+  border-top: 1px solid #444;
+  background-color: #1e1e1e;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 10px;
+  background-color: #2c2c2c;
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.drag-handle {
+  height: 5px;
+  background-color: #444;
+  cursor: ns-resize;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.video-chat-panel {
+  width: 300px;
+  background-color: #1e1e1e;
+  border-left: 1px solid #444;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen-share-controls {
+  padding: 10px;
+  border-top: 1px solid #444;
+}
+
+.no-file-selected {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #888;
+  font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .main-content {
+    flex-direction: column;
+  }
+  
+  .file-explorer-panel,
+  .video-chat-panel {
+    width: 100%;
+    height: 200px;
+  }
+}

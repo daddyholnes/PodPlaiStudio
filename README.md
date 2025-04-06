@@ -104,6 +104,22 @@ npm run dev
 # Or start them individually
 npm run dev:client
 npm run dev:server
+
+# Alternative alias for dev mode
+npm run start:dev
+```
+
+## Running the Application
+
+```bash
+# Start only the server (useful when client is already built)
+npm run start:server
+
+# Build client and start server (full production mode)
+npm run start:full
+
+# Quick server start (alias for start:server)
+npm start
 ```
 
 ## Building for Production

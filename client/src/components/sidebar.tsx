@@ -7,7 +7,7 @@ import { useConversationsContext } from '@/contexts/conversations-context';
 import ConversationsList from './conversations-list';
 
 interface SidebarProps {
-  activeTab: 'chat' | 'generate' | 'code' | 'liveapi' | 'replicode';
+  activeTab: 'chat' | 'generate' | 'code' | 'liveapi' | 'replicode' | 'multimodel';
 }
 
 export default function Sidebar({ activeTab }: SidebarProps) {
@@ -45,7 +45,7 @@ export default function Sidebar({ activeTab }: SidebarProps) {
         </div>
         
         {/* Vertical Navigation Items */}
-        <div className="flex flex-col items-center w-full pt-4 space-y-6">
+        <div className="flex flex-col items-center w-full pt-4 space-y-4">
           <button 
             onClick={() => window.dispatchEvent(new CustomEvent('change-tab', { detail: 'chat' }))}
             className={`w-full py-3 flex flex-col items-center justify-center ${
@@ -104,6 +104,18 @@ export default function Sidebar({ activeTab }: SidebarProps) {
           >
             <span className="material-icons mb-1">api</span>
             <span className="text-xs font-medium">LiveAPI</span>
+          </button>
+          
+          <button 
+            onClick={() => window.dispatchEvent(new CustomEvent('change-tab', { detail: 'multimodel' }))}
+            className={`w-full py-3 flex flex-col items-center justify-center ${
+              activeTab === 'multimodel' 
+                ? 'text-primary border-l-4 border-primary' 
+                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+            }`}
+          >
+            <span className="material-icons mb-1">forum</span>
+            <span className="text-xs font-medium">Multi-AI</span>
           </button>
         </div>
         

@@ -1,21 +1,22 @@
 import { useState, useEffect } from "react";
 import { Switch, Route } from "wouter";
-import { Toaster } from "@/components/ui/toaster";
-import NotFound from "@/pages/not-found";
-import Sidebar from "@/components/sidebar";
-import ChatView from "@/components/chat-view";
-import GenerateView from "@/components/generate-view";
-import CodeView from "@/components/code-view";
-import LiveApiView from "@/components/live-api-view";
-import ReplicodeView from "@/components/ReplicodeView";
-import ConfigPanel from "@/components/config-panel";
-import ErrorBoundary from "@/components/error-boundary";
-import { ThemeProvider } from "@/contexts/theme-context";
-import { GeminiProvider } from "@/contexts/gemini-context";
-import { ConversationsProvider } from "@/contexts/conversations-context";
+import { Toaster } from "./components/ui/toaster";
+import NotFound from "./pages/not-found";
+import Sidebar from "./components/sidebar";
+import ChatView from "./components/chat-view";
+import GenerateView from "./components/generate-view";
+import CodeView from "./components/code-view";
+import LiveApiView from "./components/live-api-view";
+import ReplicodeView from "./components/ReplicodeView";
+import MultiModelChatView from "./components/MultiModelChatView";
+import ConfigPanel from "./components/config-panel";
+import ErrorBoundary from "./components/error-boundary";
+import { ThemeProvider } from "./contexts/theme-context";
+import { GeminiProvider } from "./contexts/gemini-context";
+import { ConversationsProvider } from "./contexts/conversations-context";
 
 function MainLayout() {
-  const [activeTab, setActiveTab] = useState<'chat' | 'generate' | 'code' | 'liveapi' | 'replicode'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'generate' | 'code' | 'liveapi' | 'replicode' | 'multimodel'>('chat');
 
   // Handle tab change events from sidebar
   useEffect(() => {
@@ -47,6 +48,7 @@ function MainLayout() {
               {activeTab === 'code' && <CodeView />}
               {activeTab === 'liveapi' && <LiveApiView />}
               {activeTab === 'replicode' && <ReplicodeView />}
+              {activeTab === 'multimodel' && <MultiModelChatView />}
             </ErrorBoundary>
           </div>
           

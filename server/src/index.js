@@ -44,9 +44,43 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`LiveKit Server URL: ${process.env.LIVEKIT_SERVER_URL}`);
-});
+// Use a different port range (5050-5100) to avoid conflicts
+const BASE_PORT = process.env.PORT || 5050;
+const MAX_PORT_ATTEMPTS = 50;
+
+// Try to start server on available port
+function findAndStartOnAvailablePort(attempt = 0) {
+  const port = BASE_PORT + attempt;
+  
+  // Stop trying after too many attempts
+  if (attempt >= MAX_PORT_ATTEMPTS) {
+    console.error(`Failed to find an available port after ${MAX_PORT_ATTEMPTS} attempts`);
+    process.exit(1);
+    return;
+  }
+  
+  try {
+    server.listen(port);
+    
+    server.on('listening', () => {
+      console.log(`Server running on port ${port}`);
+      console.log(`LiveKit Server URL: ${process.env.LIVEKIT_SERVER_URL || 'not configured'}`);
+    });
+    
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.log(`Port ${port} is already in use, trying next port...`);
+        // Try next port
+        findAndStartOnAvailablePort(attempt + 1);
+      } else {
+        console.error('Server error:', err);
+      }
+    });
+  } catch (error) {
+    console.error('Error starting server:', error);
+    findAndStartOnAvailablePort(attempt + 1);
+  }
+}
+
+// Start the server
+findAndStartOnAvailablePort();

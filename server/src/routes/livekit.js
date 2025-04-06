@@ -5,15 +5,21 @@ const { AccessToken, RoomServiceClient } = require('livekit-server-sdk');
  * @param {Express} app - Express application
  */
 const setupLiveKitRoutes = (app) => {
-  const apiKey = process.env.LIVEKIT_API_KEY;
-  const apiSecret = process.env.LIVEKIT_API_SECRET;
-  const livekitUrl = process.env.LIVEKIT_SERVER_URL;
+  const apiKey = process.env.LIVEKIT_API_KEY || 'devkey';
+  const apiSecret = process.env.LIVEKIT_API_SECRET || 'devsecret';
+  const livekitUrl = process.env.LIVEKIT_SERVER_URL || 'http://localhost:7880';
   
-  if (!apiKey || !apiSecret || !livekitUrl) {
-    console.error('LiveKit environment variables not set properly');
+  if (!process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET || !process.env.LIVEKIT_SERVER_URL) {
+    console.warn('LiveKit environment variables not set properly, using default values for development');
   }
   
-  const roomService = new RoomServiceClient(livekitUrl, apiKey, apiSecret);
+  let roomService;
+  try {
+    roomService = new RoomServiceClient(livekitUrl, apiKey, apiSecret);
+  } catch (error) {
+    console.error('Failed to initialize LiveKit Room Service:', error);
+    roomService = null;
+  }
 
   // Generate token for a participant
   app.post('/api/livekit/token', (req, res) => {
@@ -78,8 +84,13 @@ const setupLiveKitRoutes = (app) => {
   // Delete a room
   app.delete('/api/livekit/rooms/:roomName', async (req, res) => {
     try {
+      if (!roomService) {
+        return res.status(503).json({ error: 'LiveKit service unavailable' });
+      }
+      
       const { roomName } = req.params;
       await roomService.deleteRoom(roomName);
+
       res.json({ success: true });
     } catch (error) {
       console.error('Error deleting room:', error);
