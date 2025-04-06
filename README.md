@@ -216,3 +216,56 @@ PodPlaiStudio/
 └── shared/               # Shared types and utilities
 ```
 
+## Setup Instructions
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Download and set up fonts:
+   ```bash
+   npm run download-fonts
+   npm run setup-fonts
+   ```
+
+3. Build the client:
+   ```bash
+   npm run build
+   ```
+
+4. Start the server:
+   ```bash
+   npm run start:server
+   ```
+
+5. For development mode, run:
+   ```bash
+   npm run dev
+   ```
+
+## Troubleshooting
+
+### Missing fonts
+If you see 404 errors for font files, run:
+```bash
+npm run setup-fonts
+```
+
+### Terminal API errors
+The application includes a mock terminal service that works even if the API is not available.
+
+### Build errors about missing CSS files
+If you encounter errors about missing CSS files during build (e.g., XtermTerminal.css), ensure all component CSS files exist:
+```bash
+# Check that all imported CSS files exist in their respective component directories
+# For example, if you see "Could not resolve ./XtermTerminal.css", make sure this file exists:
+ls client/src/components/Terminal/XtermTerminal.css
+```
+
+### CSS files not being loaded
+If you encounter issues with CSS files not being loaded or recognized:
+1. Make sure the file paths in your imports are correct
+2. Check for any Content Security Policy restrictions in the browser console
+3. Verify that PostCSS and other CSS processing tools are properly configured
+

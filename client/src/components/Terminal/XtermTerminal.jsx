@@ -1,16 +1,38 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
-import { executeCommand } from '../../services/terminalService';
+import { createTerminalSession, sendTerminalCommand } from '../../services/terminalService';
 import '@xterm/xterm/css/xterm.css';
 
-const XtermTerminal = ({ sessionId }) => {
+const XtermTerminal = ({ sessionId, onSessionCreate }) => {
   const terminalRef = useRef(null);
   const terminalInstanceRef = useRef(null);
   const fitAddonRef = useRef(null);
   const commandBufferRef = useRef('');
   const webSocketRef = useRef(null);
+  const [termSession, setTermSession] = useState(sessionId);
+
+  // Initialize terminal session if not provided
+  useEffect(() => {
+    const initSession = async () => {
+      if (!sessionId) {
+        try {
+          const session = await createTerminalSession();
+          setTermSession(session.id);
+          if (onSessionCreate) {
+            onSessionCreate(session);
+          }
+        } catch (error) {
+          console.warn('Failed to create terminal session:', error);
+          // Create a mock session ID to allow terminal to function
+          setTermSession(`mock-${Date.now()}`);
+        }
+      }
+    };
+    
+    initSession();
+  }, [sessionId, onSessionCreate]);
 
   useEffect(() => {
     // Initialize terminal
@@ -39,16 +61,21 @@ const XtermTerminal = ({ sessionId }) => {
     terminal.loadAddon(webLinksAddon);
 
     // Open terminal in the container
-    terminal.open(terminalRef.current);
-    fitAddon.fit();
+    if (terminalRef.current) {
+      terminal.open(terminalRef.current);
+      fitAddon.fit();
 
-    // Connect to WebSocket for terminal communications
-    connectWebSocket(sessionId);
+      // Connect to WebSocket for terminal communications
+      const currentSessionId = termSession || sessionId;
+      if (currentSessionId) {
+        connectWebSocket(currentSessionId);
+      }
 
-    // Welcome message
-    terminal.writeln('Welcome to PodPlai Studio Terminal');
-    terminal.writeln('Type "help" for available commands');
-    terminal.write('\r\n$ ');
+      // Welcome message
+      terminal.writeln('Welcome to PodPlai Studio Terminal');
+      terminal.writeln('Type "help" for available commands');
+      terminal.write('\r\n$ ');
+    }
 
     // Handle terminal input
     terminal.onData((data) => {
@@ -91,7 +118,7 @@ const XtermTerminal = ({ sessionId }) => {
         webSocketRef.current.close();
       }
     };
-  }, [sessionId]);
+  }, [sessionId, termSession]);
 
   const connectWebSocket = (sessionId) => {
     // Create a simulated terminal connection since we don't have node-pty anymore
@@ -149,7 +176,14 @@ const XtermTerminal = ({ sessionId }) => {
     <div 
       className="terminal-container" 
       ref={terminalRef} 
-      style={{ height: '100%', width: '100%' }}
+      style={{ 
+        height: '100%', 
+        width: '100%',
+        backgroundColor: '#1e1e1e',
+        padding: '8px',
+        borderRadius: '4px',
+        overflow: 'hidden'
+      }}
       aria-label="Terminal"
       role="region"
     />

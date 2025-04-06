@@ -1,201 +1,186 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useTheme } from '@/hooks/use-theme';
-import { useGeminiContext } from '@/hooks/use-gemini-context';
-import { useToast } from '@/hooks/use-toast';
-import { useConversationsContext } from '@/contexts/conversations-context';
-import ConversationsList from './conversations-list';
+import React, { useState, useEffect } from 'react';
+import { 
+  FolderIcon, FileIcon, MessageSquare, ChevronDown, ChevronRight, 
+  PlusCircle, Code, Settings, Terminal 
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-interface SidebarProps {
-  activeTab: 'chat' | 'generate' | 'code' | 'liveapi' | 'replicode' | 'multimodel';
+interface TreeItem {
+  id: string;
+  name: string;
+  type: 'file' | 'folder' | 'chat' | 'project';
+  path?: string;
+  children?: TreeItem[];
 }
 
-export default function Sidebar({ activeTab }: SidebarProps) {
-  const { toggleDarkMode, isDarkMode } = useTheme();
-  const { modelConfig, updateModelConfig, availableModels } = useGeminiContext();
-  const { toast } = useToast();
-  const { conversations, createConversation, selectedConversation } = useConversationsContext();
-  
-  interface ApiStatus {
-    status: string;
-    apiKeyConfigured: boolean;
-    apiKeyMasked?: string;
-  }
-  
-  // Query API status
-  const { data: apiStatus } = useQuery<ApiStatus>({
-    queryKey: ['/api/status'],
-    retry: false,
-  });
+export const Sidebar = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [treeData, setTreeData] = useState<TreeItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Handle creating a new conversation
-  const handleNewConversation = () => {
-    createConversation("New conversation");
+  // Fetch file structure and chats from the server
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // TODO: Replace with actual API calls
+        const fileData = await fetch('/api/files').then(res => res.json());
+        const chatData = await fetch('/api/chats').then(res => res.json());
+        
+        // Process and combine data
+        const processedData = [
+          {
+            id: 'projects',
+            name: 'Projects',
+            type: 'project',
+            children: fileData.map((file: any) => ({
+              id: file.id,
+              name: file.name,
+              type: file.isDirectory ? 'folder' : 'file',
+              path: file.path,
+              children: file.children || []
+            }))
+          },
+          {
+            id: 'chats',
+            name: 'Chats',
+            type: 'project',
+            children: chatData.map((chat: any) => ({
+              id: chat.id,
+              name: chat.title || 'Untitled Chat',
+              type: 'chat',
+              path: `/chat/${chat.id}`
+            }))
+          }
+        ];
+        
+        setTreeData(processedData);
+        setExpanded({ 'projects': true, 'chats': true });
+      } catch (error) {
+        console.error('Failed to fetch sidebar data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
+
+  const toggleExpand = (id: string) => {
+    setExpanded(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  const handleItemClick = (item: TreeItem) => {
+    if (item.type === 'folder' || item.type === 'project') {
+      toggleExpand(item.id);
+    } else if (item.path) {
+      navigate(item.path);
+    }
+  };
+
+  const renderTreeItem = (item: TreeItem, depth = 0) => {
+    const isExpanded = expanded[item.id];
+    const isActive = item.path === location.pathname;
+    const hasChildren = item.children && item.children.length > 0;
+    
+    const renderIcon = () => {
+      switch (item.type) {
+        case 'file': return <FileIcon className="h-4 w-4 text-muted-foreground" />;
+        case 'folder': return <FolderIcon className="h-4 w-4 text-muted-foreground" />;
+        case 'chat': return <MessageSquare className="h-4 w-4 text-muted-foreground" />;
+        case 'project': return <Code className="h-4 w-4 text-muted-foreground" />;
+        default: return null;
+      }
+    };
+
+    return (
+      <div key={item.id}>
+        <div 
+          onClick={() => handleItemClick(item)}
+          className={cn(
+            'flex items-center py-1 px-2 rounded-md cursor-pointer hover:bg-accent/50',
+            depth > 0 ? 'ml-4' : '',
+            isActive ? 'bg-accent text-accent-foreground' : 'text-foreground'
+          )}
+        >
+          <div className="mr-1">
+            {hasChildren ? (
+              isExpanded ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )
+            ) : (
+              <span className="w-4"></span>
+            )}
+          </div>
+          {renderIcon()}
+          <span className="ml-2 text-sm truncate">{item.name}</span>
+        </div>
+        
+        {isExpanded && hasChildren && item.children?.map(child => renderTreeItem(child, depth + 1))}
+      </div>
+    );
+  };
+
+  const createNewChat = () => {
+    // TODO: Implement API call to create a new chat
+    navigate('/chat/new');
   };
 
   return (
-    <div className="flex h-full">
-      {/* Vertical Navigation Tabs */}
-      <div className="w-16 border-r border-neutral-300 dark:border-neutral-700 flex flex-col items-center bg-white dark:bg-neutral-900">
-        {/* Logo */}
-        <div className="w-full p-3 flex justify-center border-b border-neutral-300 dark:border-neutral-800">
-          <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white">
-            <span className="material-icons text-base">smart_toy</span>
-          </div>
-        </div>
-        
-        {/* Vertical Navigation Items */}
-        <div className="flex flex-col items-center w-full pt-4 space-y-4">
-          <button 
-            onClick={() => window.dispatchEvent(new CustomEvent('change-tab', { detail: 'chat' }))}
-            className={`w-full py-3 flex flex-col items-center justify-center ${
-              activeTab === 'chat' 
-                ? 'text-primary border-l-4 border-primary' 
-                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-            }`}
-          >
-            <span className="material-icons mb-1">chat</span>
-            <span className="text-xs font-medium">Chat</span>
-          </button>
-          
-          <button 
-            onClick={() => window.dispatchEvent(new CustomEvent('change-tab', { detail: 'generate' }))}
-            className={`w-full py-3 flex flex-col items-center justify-center ${
-              activeTab === 'generate' 
-                ? 'text-primary border-l-4 border-primary' 
-                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-            }`}
-          >
-            <span className="material-icons mb-1">text_fields</span>
-            <span className="text-xs font-medium">Generate</span>
-          </button>
-          
-          <button 
-            onClick={() => window.dispatchEvent(new CustomEvent('change-tab', { detail: 'code' }))}
-            className={`w-full py-3 flex flex-col items-center justify-center ${
-              activeTab === 'code' 
-                ? 'text-primary border-l-4 border-primary' 
-                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-            }`}
-          >
-            <span className="material-icons mb-1">code</span>
-            <span className="text-xs font-medium">Code</span>
-          </button>
-          
-          <button 
-            onClick={() => window.dispatchEvent(new CustomEvent('change-tab', { detail: 'replicode' }))}
-            className={`w-full py-3 flex flex-col items-center justify-center ${
-              activeTab === 'replicode' 
-                ? 'text-primary border-l-4 border-primary' 
-                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-            }`}
-          >
-            <span className="material-icons mb-1">terminal</span>
-            <span className="text-xs font-medium">Replicode</span>
-          </button>
-          
-          <button 
-            onClick={() => window.dispatchEvent(new CustomEvent('change-tab', { detail: 'liveapi' }))}
-            className={`w-full py-3 flex flex-col items-center justify-center ${
-              activeTab === 'liveapi' 
-                ? 'text-primary border-l-4 border-primary' 
-                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-            }`}
-          >
-            <span className="material-icons mb-1">api</span>
-            <span className="text-xs font-medium">LiveAPI</span>
-          </button>
-          
-          <button 
-            onClick={() => window.dispatchEvent(new CustomEvent('change-tab', { detail: 'multimodel' }))}
-            className={`w-full py-3 flex flex-col items-center justify-center ${
-              activeTab === 'multimodel' 
-                ? 'text-primary border-l-4 border-primary' 
-                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-            }`}
-          >
-            <span className="material-icons mb-1">forum</span>
-            <span className="text-xs font-medium">Multi-AI</span>
-          </button>
-        </div>
-        
-        {/* Settings Button */}
-        <div className="mt-auto mb-4">
-          <button 
-            className="p-2 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full"
-            onClick={toggleDarkMode}
-          >
-            <span className="material-icons">{isDarkMode ? 'light_mode' : 'dark_mode'}</span>
-          </button>
-        </div>
+    <div className="flex flex-col h-full border-r bg-background">
+      <div className="p-3 border-b">
+        <Button 
+          variant="outline" 
+          className="w-full justify-start gap-2"
+          onClick={createNewChat}
+        >
+          <PlusCircle className="h-4 w-4" />
+          <span>New Conversation</span>
+        </Button>
       </div>
       
-      {/* Sidebar Panel */}
-      <div className="w-64 border-r border-neutral-300 dark:border-neutral-700 flex flex-col flex-shrink-0 h-full bg-white dark:bg-neutral-900">
-        {/* Header */}
-        <div className="flex flex-col p-4 border-b border-neutral-300 dark:border-neutral-800">
-          <h1 className="font-google-sans text-xl font-medium">PodPlay API Studio</h1>
-          <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">Using {availableModels[modelConfig.model]}</p>
-        </div>
-        
-        {/* Model Selection Section */}
-        <div className="p-4 border-b border-neutral-300 dark:border-neutral-800">
-          <label className="text-sm font-medium text-neutral-700 dark:text-neutral-400 block mb-2">Model</label>
-          <div className="relative">
-            <select 
-              className="w-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-md py-2 px-3 text-sm appearance-none"
-              value={modelConfig.model}
-              onChange={(e) => updateModelConfig({ model: e.target.value })}
-            >
-              {Object.entries(availableModels).map(([id, name]) => (
-                <option key={id} value={id}>{name}</option>
-              ))}
-            </select>
-            <span className="material-icons absolute right-2 top-2 text-neutral-500 pointer-events-none">arrow_drop_down</span>
+      <div className="flex-1 overflow-y-auto p-2">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-full">
+            <p className="text-sm text-muted-foreground">Loading...</p>
           </div>
-        </div>
-        
-        {/* History Section */}
-        <div className="flex flex-col flex-grow overflow-y-auto">
-          <div className="px-4 pt-3 pb-2 flex justify-between items-center">
-            <h2 className="text-sm font-medium text-neutral-700 dark:text-neutral-400">Conversation History</h2>
-            <button 
-              className="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
-              onClick={handleNewConversation}
-            >
-              <span className="material-icons text-sm">add</span>
-            </button>
-          </div>
+        ) : (
+          treeData.map(item => renderTreeItem(item))
+        )}
+      </div>
+      
+      <div className="p-3 border-t">
+        <div className="flex justify-around">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
+                <Settings className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Settings</TooltipContent>
+          </Tooltip>
           
-          {/* Conversations List */}
-          <ConversationsList />
-        </div>
-        
-        {/* API Key Status */}
-        <div className="p-4 border-t border-neutral-300 dark:border-neutral-700 mt-auto">
-          <div className="text-xs text-neutral-500 mb-3">
-            <div className="flex items-center">
-              <span className="font-medium mr-1">API Status:</span>
-              {apiStatus?.apiKeyConfigured ? (
-                <span className="text-green-500 flex items-center">
-                  <span className="material-icons text-xs mr-1">check_circle</span>
-                  Active
-                </span>
-              ) : (
-                <span className="text-red-500 flex items-center">
-                  <span className="material-icons text-xs mr-1">error</span>
-                  Missing
-                </span>
-              )}
-            </div>
-          </div>
-          
-          <div className="text-xs text-neutral-500 mt-2">
-            <a href="https://ai.google.dev/docs" target="_blank" rel="noopener noreferrer" className="hover:text-primary">Documentation</a> •
-            <a href="https://ai.google.dev/tutorials/setup" target="_blank" rel="noopener noreferrer" className="hover:text-primary ml-1">Help</a>
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={() => navigate('/terminal')}>
+                <Terminal className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Terminal</TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default Sidebar;

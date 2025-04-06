@@ -1,10 +1,32 @@
 import React, { useState } from 'react';
-import { useLocalParticipant } from '@livekit/components-react';
+import { useLocalParticipant, useRoom, useTracks } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 
 const ScreenShare = () => {
+  // Add a conditional check for room context
+  const roomContext = useRoom();
+  const room = roomContext?.room;
+
+  // Only attempt to use LiveKit hooks if we're in a room context
+  const tracks = room ? useTracks() : [];
+  const { localParticipant } = room ? useLocalParticipant() : { localParticipant: null };
+
+  // If no room is available, render a placeholder
+  if (!room) {
+    return (
+      <div className="screen-share-placeholder">
+        <p>Screen sharing requires an active LiveKit room. Please join a room first.</p>
+        <button 
+          className="join-room-btn"
+          onClick={() => console.log('Room joining should be implemented')}
+        >
+          Join Room
+        </button>
+      </div>
+    );
+  }
+
   const [isScreenSharing, setIsScreenSharing] = useState(false);
-  const { localParticipant } = useLocalParticipant();
 
   const toggleScreenShare = async () => {
     if (!localParticipant) return;

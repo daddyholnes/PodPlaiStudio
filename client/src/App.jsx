@@ -5,7 +5,6 @@ import MonacoEditor from './components/Editor/MonacoEditor';
 import XtermTerminal from './components/Terminal/XtermTerminal';
 import FileTree from './components/FileExplorer/FileTree';
 import { getFileContent, updateFile } from './services/fileService';
-import { createTerminalSession } from './services/terminalService';
 import { configureWebSocketReconnection } from './services/webSocketService';
 import './App.css';
 
@@ -15,27 +14,16 @@ const App = () => {
   const [isJoined, setIsJoined] = useState(false);
   const [currentFile, setCurrentFile] = useState(null);
   const [fileContent, setFileContent] = useState('');
-  const [terminalSessionId, setTerminalSessionId] = useState('');
+  const [terminalSession, setTerminalSession] = useState(null);
   const [editorLanguage, setEditorLanguage] = useState('javascript');
   const [theme, setTheme] = useState('vs-dark');
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   const [bottomPanelHeight, setBottomPanelHeight] = useState(300);
   
-  // Initialize terminal session
+  // Initialize components
   useEffect(() => {
-    const initTerminal = async () => {
-      try {
-        const session = await createTerminalSession();
-        setTerminalSessionId(session.sessionId);
-      } catch (error) {
-        console.error('Failed to create terminal session:', error);
-      }
-    };
-    
     initTerminal();
-    
-    // Configure WebSocket reconnection
     configureWebSocketReconnection();
     
     return () => {
@@ -50,6 +38,21 @@ const App = () => {
     }
   }, [currentFile]);
   
+  const initTerminal = async () => {
+    try {
+      // Terminal session will be created within XtermTerminal component
+      console.log('Terminal will initialize with its own session');
+    } catch (error) {
+      console.error('Failed to initialize terminal:', error);
+    }
+  };
+
+  // Terminal session handler
+  const handleTerminalSessionCreate = (session) => {
+    setTerminalSession(session);
+    console.log('Terminal session created:', session);
+  };
+
   const loadFileContent = async (filePath) => {
     try {
       const response = await getFileContent(filePath);
@@ -253,7 +256,10 @@ const App = () => {
                     }}
                   ></div>
                 </div>
-                <XtermTerminal sessionId={terminalSessionId} />
+                <XtermTerminal 
+                  sessionId={terminalSession?.id} 
+                  onSessionCreate={handleTerminalSessionCreate} 
+                />
               </div>
             </div>
             
