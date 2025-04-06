@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 const API_BASE_URL = '/api/livekit';
@@ -9,13 +8,14 @@ const API_BASE_URL = '/api/livekit';
  * @param {string} participantName - The display name of the participant
  * @returns {Promise<string>} A LiveKit JWT token
  */
-export const fetchRoomToken = async (roomName = 'default-room', participantName = `user-${Date.now()}`) => {
+export const fetchRoomToken = async (roomName, participantName) => {
   try {
-    console.log(`Fetching token for room: ${roomName}, participant: ${participantName}`);
+    console.log(`Requesting token for room: ${roomName}, participant: ${participantName}`);
     const response = await axios.post(`${API_BASE_URL}/token`, {
       roomName,
       participantName
     });
+    console.log('Token received from server');
     return response.data.token;
   } catch (error) {
     console.error('Error fetching LiveKit token:', error);
@@ -27,19 +27,13 @@ export const fetchRoomToken = async (roomName = 'default-room', participantName 
  * Creates a new LiveKit room
  * @param {Object} options - Room creation options
  * @param {string} options.roomName - The name of the room to create
- * @param {number} [options.maxParticipants] - Maximum number of participants allowed
- * @param {number} [options.emptyTimeout] - Room timeout in seconds when empty
- * @param {string} [options.metadata] - Room metadata
  * @returns {Promise<Object>} Room details
  */
-export const createRoom = async ({ roomName, maxParticipants, emptyTimeout, metadata }) => {
+export const createRoom = async ({ roomName }) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/rooms`, { 
-      roomName, 
-      maxParticipants, 
-      emptyTimeout,
-      metadata 
-    });
+    console.log(`Creating room: ${roomName}`);
+    const response = await axios.post(`${API_BASE_URL}/rooms`, { roomName });
+    console.log('Room created:', response.data);
     return response.data.room;
   } catch (error) {
     console.error('Error creating room:', error);

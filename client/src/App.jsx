@@ -4,6 +4,7 @@ import XtermTerminal from './components/Terminal/XtermTerminal';
 import ScreenShare from './components/LiveKit/ScreenShare';
 import { createTerminalSession } from './services/terminalService';
 import './App.css';
+//import VideoChat from './components/LiveKit/VideoChat'; //Import the VideoChat component
 
 // Create contexts for sharing state
 export const TerminalContext = createContext(null);
@@ -14,7 +15,7 @@ const App = () => {
   const [terminalSession, setTerminalSession] = useState(null);
   const [terminalError, setTerminalError] = useState(null);
   const [terminalLoading, setTerminalLoading] = useState(false);
-  
+
   // LiveKit state
   const [liveKitRoom, setLiveKitRoom] = useState(null);
   const [liveKitToken, setLiveKitToken] = useState(null);
@@ -48,20 +49,16 @@ const App = () => {
     }
   }, [terminalSession]);
 
-  // Initialize LiveKit room
+  // Initialize LiveKit room -  This needs to be updated to fetch a token and potentially handle room creation
   const initLiveKit = useCallback(async () => {
     if (liveKitRoom) return; // Already initialized
 
     setLiveKitLoading(true);
     try {
-      // We'll use the createRoom and fetchRoomToken functions from liveKitService
-      // instead of relying on a pre-existing token
-      const roomName = 'default-room'; // or generate a unique room for this session
-      const participantName = `user-${Date.now().toString(36)}`;
-      
-      // No need to set token here as LiveKitProvider will handle that
-      setLiveKitError(null);
-      console.log('LiveKit initialization prepared for room:', roomName);
+      // Replace this with your actual token retrieval mechanism
+      const token = await fetch('/api/livekit/token').then(res => res.json());
+      setLiveKitToken(token);
+      console.log('LiveKit token fetched:', token);
     } catch (error) {
       console.error('Failed to initialize LiveKit:', error);
       setLiveKitError(error);
@@ -86,7 +83,7 @@ const App = () => {
         setIsLoading(false);
       }
     };
-    
+
     init();
   }, [initTerminal, initLiveKit]);
 
@@ -148,10 +145,14 @@ const App = () => {
             >
               <div className="main-content">
                 {/* Application Components */}
+                <div className="video-collaboration-section">
+                  {/*This is where VideoChat component would go.  You need to create this component and ensure it handles LiveKit interactions correctly*/}
+                  {/*<VideoChat roomName="default-room" />*/}
+                </div>
                 <div className="screen-share-container">
                   <ScreenShare />
                 </div>
-                
+
                 <div className="terminal-container">
                   <XtermTerminal 
                     sessionId={terminalSession?.id} 

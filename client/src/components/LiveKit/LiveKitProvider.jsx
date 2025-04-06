@@ -1,30 +1,33 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createContext, useContext } from 'react';
+import { Room } from 'livekit-client';
 import { LiveKitRoom } from '@livekit/components-react';
-import { fetchRoomToken, createRoom } from '../../services/liveKitService';
+import { fetchRoomToken } from '../../services/liveKitService';
 
-const LiveKitProvider = ({ children, roomName = 'default-room', participantName }) => {
+// Create a context for LiveKit data
+export const LiveKitContext = createContext(null);
+
+export const useLiveKit = () => useContext(LiveKitContext);
+
+const LiveKitProvider = ({ children, roomName = 'default-room' }) => {
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [room, setRoom] = useState(null);
   
+  // Get server URL from environment variables
   const serverUrl = import.meta.env.VITE_LIVEKIT_SERVER_URL || 'ws://localhost:7880';
   
   useEffect(() => {
     async function initLiveKit() {
       setIsLoading(true);
       try {
-        // Generate identity if not provided
-        const identity = participantName || `user-${Date.now().toString(36)}`;
+        // Generate a default identity using timestamp
+        const identity = `user-${Date.now().toString(36)}`;
         
-        // Ensure the room exists
-        await createRoom({ roomName });
-        console.log('Room created or confirmed:', roomName);
-        
-        // Get token for this room and participant
+        // Request token for this room and identity
         const tokenValue = await fetchRoomToken(roomName, identity);
-        console.log('Token received for room:', roomName);
-        
+        console.log('Token received for LiveKit room:', roomName);
         setToken(tokenValue);
         setError(null);
       } catch (err) {
@@ -36,16 +39,16 @@ const LiveKitProvider = ({ children, roomName = 'default-room', participantName 
     }
     
     initLiveKit();
-  }, [roomName, participantName]);
+  }, [roomName]);
   
   if (isLoading) {
-    return <div className="livekit-loading">Loading LiveKit connection...</div>;
+    return <div className="livekit-loading">Connecting to LiveKit...</div>;
   }
   
   if (error || !token) {
     return (
       <div className="livekit-error">
-        <p>Error connecting to LiveKit: {error || 'No token available'}</p>
+        <p>LiveKit connection error: {error || 'No token available'}</p>
         <button onClick={() => window.location.reload()}>Retry</button>
       </div>
     );
@@ -55,33 +58,30 @@ const LiveKitProvider = ({ children, roomName = 'default-room', participantName 
     <LiveKitRoom
       token={token}
       serverUrl={serverUrl}
+      // Start with audio/video off
       audio={false}
       video={false}
       connectOptions={{
         autoSubscribe: true
       }}
-      onConnected={() => console.log('Connected to LiveKit room:', roomName)}
-      onError={(err) => console.error('LiveKit connection error:', err)}
+      onConnected={(room) => {
+        console.log('Connected to LiveKit room:', room.name);
+        setRoom(room);
+      }}
+      onDisconnected={() => {
+        console.log('Disconnected from LiveKit room');
+        setRoom(null);
+      }}
+      onError={(err) => {
+        console.error('LiveKit connection error:', err);
+        setError(err.message);
+      }}
     >
-      {children}
+      <LiveKitContext.Provider value={{ room, isConnected: !!room }}>
+        {children}
+      </LiveKitContext.Provider>
     </LiveKitRoom>
   );
-};
-
-// Higher-order component to wrap components that need LiveKit context
-export const withLiveKitProvider = (Component) => {
-  return function WrappedComponent(props) {
-    const { roomName = 'default-room', participantName, ...restProps } = props;
-    
-    return (
-      <LiveKitProvider 
-        roomName={roomName}
-        participantName={participantName}
-      >
-        <Component {...restProps} liveKitAvailable={true} />
-      </LiveKitProvider>
-    );
-  };
 };
 
 export default LiveKitProvider;

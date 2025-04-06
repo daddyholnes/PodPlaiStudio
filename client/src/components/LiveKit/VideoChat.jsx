@@ -1,68 +1,41 @@
-
 import React from 'react';
 import { 
   VideoConference,
   ControlBar,
-  useLocalParticipant,
   useConnectionState,
   ConnectionState
 } from '@livekit/components-react';
-import { withLiveKitProvider } from './LiveKitProvider';
-import ScreenShare from './ScreenShare';
+import LiveKitProvider from './LiveKitProvider';
+import '@livekit/components-styles';
 
-const VideoChat = ({ roomName = 'default-room', liveKitAvailable }) => {
-  const { localParticipant } = useLocalParticipant();
+const VideoConferenceWithControls = () => {
   const connectionState = useConnectionState();
-  
-  // Handle case when LiveKit is not available
-  if (!liveKitAvailable) {
+
+  if (connectionState !== ConnectionState.Connected) {
     return (
-      <div className="video-chat-placeholder">
-        <p>Video chat requires LiveKit configuration. Please check your environment variables.</p>
+      <div className="livekit-connecting">
+        <p>Connection status: {connectionState}</p>
+        <p>Please wait while connecting to room...</p>
       </div>
     );
   }
-  
-  if (connectionState === ConnectionState.Connecting) {
-    return (
-      <div className="video-chat-loading">
-        <p>Connecting to LiveKit room: {roomName}...</p>
-      </div>
-    );
-  }
-  
-  if (connectionState === ConnectionState.Disconnected || 
-      connectionState === ConnectionState.Failed) {
-    return (
-      <div className="video-chat-error">
-        <p>Failed to connect to LiveKit room. Please try again.</p>
-        <button onClick={() => window.location.reload()}>Retry</button>
-      </div>
-    );
-  }
-  
+
   return (
-    <div className="video-chat-container">
-      <div className="video-chat-header">
-        <h3>Room: {roomName}</h3>
-        {localParticipant && (
-          <div className="participant-info">
-            Connected as: {localParticipant.identity}
-          </div>
-        )}
-      </div>
-      
-      <div className="video-conference-wrapper">
-        <VideoConference />
-      </div>
-      
-      <div className="video-controls">
-        <ScreenShare />
-        <ControlBar />
-      </div>
+    <div className="video-conference-container">
+      <VideoConference />
+      <ControlBar />
     </div>
   );
 };
 
-// Export the wrapped component to ensure it has LiveKit context
-export default withLiveKitProvider(VideoChat);
+const VideoChat = ({ roomName = 'default-room' }) => {
+  return (
+    <div className="video-chat-wrapper">
+      <LiveKitProvider roomName={roomName}>
+        <VideoConferenceWithControls />
+      </LiveKitProvider>
+    </div>
+  );
+};
+
+export default VideoChat;
