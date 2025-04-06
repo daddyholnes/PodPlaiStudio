@@ -5,7 +5,6 @@ const { AccessToken } = require('livekit-server-sdk');
  * Sets up LiveKit related routes
  * @param {Express} app - Express application
  */
-const { AccessToken } = require('livekit-server-sdk');
 
 const setupLiveKitRoutes = (app) => {
   const apiKey = process.env.LIVEKIT_API_KEY || 'devkey';

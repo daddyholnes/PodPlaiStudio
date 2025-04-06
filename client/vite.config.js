@@ -1,4 +1,3 @@
-
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -51,7 +50,11 @@ export default defineConfig({
         target: 'http://localhost:5050',
         changeOrigin: true,
         secure: false,
-      }
+      },
+      '/livekit': {
+        target: 'http://localhost:5050',
+        changeOrigin: true,
+      },
     },
     allowedHosts: [
       'localhost',

@@ -8,7 +8,8 @@ import axios from 'axios';
  */
 export const fetchRoomToken = async (roomName, identity) => {
   try {
-    const response = await axios.get(`/livekit/token`, {
+    console.log(`Fetching token for room: ${roomName}, identity: ${identity}`);
+    const response = await axios.get(`http://localhost:5050/livekit/token`, {
       params: {
         room: roomName,
         identity: identity
@@ -30,7 +31,8 @@ export const fetchRoomToken = async (roomName, identity) => {
  */
 export const createRoom = async ({ roomName }) => {
   try {
-    const response = await axios.post('/livekit/rooms', {
+    console.log(`Creating room: ${roomName}`);
+    const response = await axios.post('http://localhost:5050/livekit/rooms', {
       roomName
     });
 
