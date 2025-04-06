@@ -1,14 +1,29 @@
-
 .livekit-test-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  gap: 20px;
   width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 20px;
-  box-sizing: border-box;
+  height: 100%; /* from original */
+  box-sizing: border-box; /* from original */
 }
 
 .livekit-test-container h1 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.livekit-panel {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.livekit-panel h2 {
+  margin-top: 0;
   margin-bottom: 20px;
   color: #333;
 }
@@ -30,12 +45,12 @@
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
   font-weight: 500;
 }
 
@@ -47,54 +62,61 @@
   font-size: 16px;
 }
 
-.join-button {
-  background: #4285f4;
+.join-button, .leave-button {
+  background-color: #4285f4;
   color: white;
   border: none;
-  padding: 12px 20px;
   border-radius: 4px;
+  padding: 10px 20px;
   font-size: 16px;
   cursor: pointer;
-  width: 100%;
-  transition: background 0.3s;
+  transition: background-color 0.3s;
+  width: 100%; /* from original */
 }
 
-.join-button:hover {
-  background: #3367d6;
+.join-button:hover, .leave-button:hover {
+  background-color: #3367d6;
 }
 
 .join-button:disabled {
-  background: #ccc;
+  background-color: #ccc;
   cursor: not-allowed;
 }
 
-.error-message {
-  color: #ea4335;
-  margin-top: 15px;
-  text-align: center;
-}
-
-.video-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
 .leave-button {
-  background: #ea4335;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-size: 16px;
-  cursor: pointer;
-  margin-top: 20px;
-  align-self: center;
+  background-color: #db4437;
+  margin-top: 20px; /* from original */
+  align-self: center; /* from original */
 }
 
 .leave-button:hover {
-  background: #d23f31;
+  background-color: #c53929;
+}
+
+.error-message {
+  color: #db4437;
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: #ffeaea;
+  border-radius: 4px;
+  border-left: 4px solid #db4437;
+  margin-top: 15px; /* from original */
+  text-align: center; /* from original */
+}
+
+.room-info {
+  margin-bottom: 20px;
+}
+
+.video-container {
+  width: 100%;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  overflow: hidden;
+  flex: 1; /* from original */
+  display: flex; /* from original */
+  flex-direction: column; /* from original */
+  height: 100%; /* from original */
 }
 
 /* Dark mode support */
@@ -102,12 +124,12 @@
   .livekit-test-container h1 {
     color: #eee;
   }
-  
+
   .join-form {
     background: #2a2a2a;
     color: #eee;
   }
-  
+
   .form-group input {
     background-color: #333;
     color: #eee;

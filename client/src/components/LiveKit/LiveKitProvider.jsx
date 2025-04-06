@@ -1,103 +1,79 @@
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { LiveKitRoom } from 'livekit-react';
+import React, { createContext, useContext, useState } from 'react';
 import axios from 'axios';
 
 // Create context for LiveKit functionality
 const LiveKitContext = createContext(null);
 
-export function LiveKitProvider({ children }) {
-  const [roomName, setRoomName] = useState('');
-  const [token, setToken] = useState('');
-  const [identity, setIdentity] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
-  const [error, setError] = useState(null);
+// Custom hook to access the LiveKit context
+export const useLiveKit = () => useContext(LiveKitContext);
 
-  // Create a function to create and join a room
-  const createAndJoinRoom = async (roomName, identity) => {
+const LiveKitProvider = ({ children }) => {
+  const [room, setRoom] = useState(null);
+  const [connected, setConnected] = useState(false);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Function to create and join a room
+  const createAndJoinRoom = async (roomName, participantName) => {
     try {
+      setLoading(true);
       setError(null);
-      
-      // First ensure the room exists
+
       console.log(`Creating room: ${roomName}`);
-      await axios.post('/api/livekit/room', { name: roomName });
-      
-      // Then generate a token for the user
-      console.log(`Fetching token for room: ${roomName}, identity: ${identity}`);
-      const response = await axios.post('/api/livekit/token', {
-        room: roomName,
-        identity
+
+      // First create the room on the server
+      await axios.post('/api/livekit/create-room', { roomName });
+
+      // Then get a token to join the room
+      console.log(`Fetching token for room: ${roomName}, identity: ${participantName}`);
+      const response = await axios.post('/api/livekit/token', { 
+        roomName, 
+        participantName 
       });
-      
-      if (!response.data?.token) {
-        throw new Error('Failed to get token');
-      }
-      
-      // Set state with the room and token information
-      setRoomName(roomName);
-      setToken(response.data.token);
-      setIdentity(identity);
-      setIsConnected(true);
-      
+
+      const token = response.data.token;
+
+      setConnected(true);
+      setLoading(false);
+
       return {
-        roomName,
-        token: response.data.token,
-        identity
+        token,
+        room: roomName,
+        participant: participantName
       };
     } catch (err) {
-      console.error('Error creating room:', err);
-      setError(err.message || 'Failed to create or join room');
+      console.error('Error joining room:', err);
+      setError(err.message || 'Failed to join room');
+      setLoading(false);
       throw err;
     }
   };
 
-  // Leave the current room
+  // Function to leave a room
   const leaveRoom = () => {
-    setRoomName('');
-    setToken('');
-    setIsConnected(false);
+    if (room) {
+      room.disconnect();
+      setRoom(null);
+      setConnected(false);
+    }
   };
 
   // Context value
   const contextValue = {
-    roomName,
-    token,
-    identity,
-    isConnected,
+    room,
+    setRoom,
+    connected,
     error,
+    loading,
     createAndJoinRoom,
     leaveRoom
   };
 
   return (
     <LiveKitContext.Provider value={contextValue}>
-      {isConnected && token ? (
-        <LiveKitRoom
-          serverUrl={import.meta.env.VITE_LIVEKIT_URL || 'wss://your-livekit-server.com'}
-          token={token}
-          onConnected={() => console.log('Connected to LiveKit room:', roomName)}
-          onDisconnected={() => console.log('Disconnected from LiveKit room')}
-          connectOptions={{ autoSubscribe: true }}
-          video={true}
-          audio={true}
-        >
-          {children}
-        </LiveKitRoom>
-      ) : (
-        children
-      )}
+      {children}
     </LiveKitContext.Provider>
   );
-}
-
-// Create a custom hook to use the LiveKit context
-export function useLiveKit() {
-  const context = useContext(LiveKitContext);
-  if (!context) {
-    console.warn('useLiveKit must be used within a LiveKitProvider');
-    return null;
-  }
-  return context;
-}
+};
 
 export default LiveKitProvider;
