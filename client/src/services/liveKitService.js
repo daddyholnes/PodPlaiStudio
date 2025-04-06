@@ -1,7 +1,5 @@
 import axios from 'axios';
 
-const API_BASE_URL = '/api/livekit';
-
 /**
  * Fetches a LiveKit token for room access
  * @param {string} roomName - The name of the room to join
@@ -38,19 +36,17 @@ export const createRoom = async ({ roomName }) => {
     return response.data.room;
   } catch (error) {
     console.error('Error creating room:', error);
-    throw new Error('Failed to create room');
+    throw new Error('Failed to create room: ' + (error.response?.data?.error || error.message));
   }
 };
 
 /**
  * Lists all available LiveKit rooms
- * @param {string[]} [roomNames] - Optional list of room names to filter by
  * @returns {Promise<Array>} List of rooms
  */
-export const listRooms = async (roomNames) => {
+export const listRooms = async () => {
   try {
-    const params = roomNames ? { names: roomNames.join(',') } : {};
-    const response = await axios.get(`${API_BASE_URL}/rooms`, { params });
+    const response = await axios.get('/livekit/rooms');
     return response.data.rooms;
   } catch (error) {
     console.error('Error listing rooms:', error);
@@ -65,7 +61,7 @@ export const listRooms = async (roomNames) => {
  */
 export const deleteRoom = async (roomName) => {
   try {
-    await axios.delete(`${API_BASE_URL}/rooms/${roomName}`);
+    await axios.delete(`/livekit/rooms/${roomName}`);
   } catch (error) {
     console.error('Error deleting room:', error);
     throw new Error('Failed to delete room');
@@ -79,7 +75,7 @@ export const deleteRoom = async (roomName) => {
  */
 export const listParticipants = async (roomName) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/rooms/${roomName}/participants`);
+    const response = await axios.get(`/livekit/rooms/${roomName}/participants`);
     return response.data.participants;
   } catch (error) {
     console.error('Error listing participants:', error);
@@ -95,7 +91,7 @@ export const listParticipants = async (roomName) => {
  */
 export const removeParticipant = async (roomName, identity) => {
   try {
-    await axios.delete(`${API_BASE_URL}/rooms/${roomName}/participants/${identity}`);
+    await axios.delete(`/livekit/rooms/${roomName}/participants/${identity}`);
   } catch (error) {
     console.error('Error removing participant:', error);
     throw new Error('Failed to remove participant');

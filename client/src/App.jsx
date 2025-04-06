@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useEffect, Suspense } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import './App.css';
-import { LiveKitRoom } from '@livekit/components-react';
 import LiveKitProvider from './components/LiveKit/LiveKitProvider';
 import VideoChat from './components/LiveKit/VideoChat';
 import ScreenShare from './components/LiveKit/ScreenShare';
@@ -45,25 +45,21 @@ const App = () => {
       </header>
 
       <main className="app-content">
-        {livekitReady ? (
+        <div className="livekit-test-container" style={{ margin: '20px 0' }}>
+          <LiveKitTest />
+        </div>
+        
+        {livekitReady && (
           <LiveKitProvider
             roomName={roomName}
             participantName={username}
           >
             <div className="video-section">
-              <div style={{ marginBottom: '20px' }}>
-                <h2>LiveKit Video Chat Demo</h2>
-                <LiveKitTest />
-              </div>
+              <h2>LiveKit Video Chat Demo</h2>
               <VideoChat />
               <ScreenShare />
             </div>
           </LiveKitProvider>
-        ) : (
-          <div className="livekit-unavailable">
-            <p>LiveKit functionality is currently unavailable.</p>
-            <button onClick={() => setLivekitReady(true)}>Retry Connection</button>
-          </div>
         )}
       </main>
     </div>

@@ -1,3 +1,4 @@
+
 const { AccessToken } = require('livekit-server-sdk');
 const express = require('express');
 const router = express.Router();
@@ -8,14 +9,14 @@ const router = express.Router();
  */
 const setupLiveKitRoutes = (app) => {
   const apiKey = process.env.LIVEKIT_API_KEY || 'devkey';
-  const apiSecret = process.env.LIVEKIT_API_SECRET || 'devsecret';
+  const apiSecret = process.env.LIVEKIT_API_SECRET || 'secret';
   const livekitHost = process.env.LIVEKIT_SERVER_URL || 'wss://dartopia-gvu1e64v.livekit.cloud';
 
   if (!process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET || !process.env.LIVEKIT_SERVER_URL) {
     console.warn('LiveKit environment variables not set properly, using default values for development');
   }
 
-  //LiveKit routes implementation
+  // LiveKit token generation route
   app.get('/livekit/token', (req, res) => {
     try {
       const { identity, room } = req.query;
@@ -24,16 +25,9 @@ const setupLiveKitRoutes = (app) => {
         return res.status(400).json({ error: 'Missing required parameters: identity and room' });
       }
 
-      // Get credentials from environment variables
-      const apiKey = process.env.LIVEKIT_API_KEY;
-      const apiSecret = process.env.LIVEKIT_API_SECRET;
+      console.log(`Generating token for ${identity} in room ${room}`);
 
-      if (!apiKey || !apiSecret) {
-        console.error('LiveKit API credentials not configured');
-        return res.status(500).json({ error: 'LiveKit API credentials not configured' });
-      }
-
-      // Create a new access token
+      // Create a new access token with the API key and secret
       const token = new AccessToken(apiKey, apiSecret, {
         identity: identity,
         name: identity // Use identity as the participant name
@@ -69,28 +63,20 @@ const setupLiveKitRoutes = (app) => {
         return res.status(400).json({ error: 'Room name is required' });
       }
       
-      const apiKey = process.env.LIVEKIT_API_KEY;
-      const apiSecret = process.env.LIVEKIT_API_SECRET;
-      const livekitHost = process.env.LIVEKIT_SERVER_URL;
-      
-      if (!apiKey || !apiSecret || !livekitHost) {
-        console.error('LiveKit API credentials not configured');
-        return res.status(500).json({ error: 'LiveKit API credentials not configured' });
-      }
-      
-      // For this demo, we'll just return a success message
-      // In a production environment, you would connect to the LiveKit server
-      // and create the room using the RoomService
       console.log(`Room creation requested: ${roomName}`);
+      
+      // For this demo, we'll return a success message without actually creating a room via the LiveKit API
+      // In a production environment, you would use the RoomService from livekit-server-sdk
+      const room = {
+        name: roomName,
+        emptyTimeout: 10 * 60, // 10 minutes
+        maxParticipants: 20,
+        creationTime: new Date().toISOString()
+      };
       
       res.json({ 
         success: true, 
-        room: {
-          name: roomName,
-          emptyTimeout: 10 * 60, // 10 minutes
-          maxParticipants: 20,
-          creationTime: new Date().toISOString()
-        } 
+        room
       });
     } catch (error) {
       console.error('Error creating room:', error);
@@ -98,8 +84,28 @@ const setupLiveKitRoutes = (app) => {
     }
   });
 
+  // List rooms endpoint
+  app.get('/livekit/rooms', async (req, res) => {
+    try {
+      // In a production environment, you would fetch the rooms from LiveKit
+      // For now, return a mock response
+      res.json({
+        rooms: [
+          {
+            name: 'default-room',
+            emptyTimeout: 10 * 60,
+            maxParticipants: 20,
+            creationTime: new Date().toISOString(),
+            numParticipants: 0
+          }
+        ]
+      });
+    } catch (error) {
+      console.error('Error listing rooms:', error);
+      res.status(500).json({ error: 'Failed to list rooms: ' + error.message });
+    }
+  });
 
-  app.use('/api/livekit', router);
   console.log('LiveKit routes initialized');
 };
 
