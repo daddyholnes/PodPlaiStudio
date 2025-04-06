@@ -67,4 +67,17 @@ router.post('/join-room', (req, res) => {
   }
 });
 
+// Webhook endpoint to receive LiveKit events
+router.post('/webhook', (req, res) => {
+  try {
+    console.log('Received webhook from LiveKit:', req.body);
+    // Process webhook data here
+    
+    return res.status(200).send('Webhook received');
+  } catch (error) {
+    console.error('Error processing webhook:', error);
+    return res.status(500).json({ error: 'Failed to process webhook' });
+  }
+});
+
 export default router;
