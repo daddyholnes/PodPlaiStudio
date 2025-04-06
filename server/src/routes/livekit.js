@@ -1,3 +1,4 @@
+
 const { AccessToken, RoomServiceClient } = require('livekit-server-sdk');
 
 /**
@@ -48,10 +49,15 @@ const setupLiveKitRoutes = (app) => {
     }
   });
 
-  // Create a new room
+  // Create a new room with additional configuration
   app.post('/api/livekit/rooms', async (req, res) => {
     try {
-      const { roomName } = req.body;
+      const { 
+        roomName,
+        maxParticipants = 10,
+        emptyTimeout = 300,
+        metadata = ''
+      } = req.body;
       
       if (!roomName) {
         return res.status(400).json({ error: 'Room name is required' });
@@ -65,14 +71,15 @@ const setupLiveKitRoutes = (app) => {
       try {
         room = await roomService.createRoom({
           name: roomName,
-          emptyTimeout: 300, // Delete room after 5 minutes of inactivity
-          maxParticipants: 10,
+          emptyTimeout,
+          maxParticipants,
+          metadata
         });
       } catch (error) {
         // If room already exists, try to fetch it instead
         if (error.message.includes('already exists')) {
-          const rooms = await roomService.listRooms();
-          room = rooms.find(r => r.name === roomName);
+          const rooms = await roomService.listRooms([roomName]);
+          room = rooms[0];
         } else {
           throw error;
         }
@@ -89,10 +96,17 @@ const setupLiveKitRoutes = (app) => {
     }
   });
 
-  // List all rooms
+  // List all rooms or specific rooms
   app.get('/api/livekit/rooms', async (req, res) => {
     try {
-      const rooms = await roomService.listRooms();
+      if (!roomService) {
+        return res.status(503).json({ error: 'LiveKit service unavailable' });
+      }
+
+      const { names } = req.query;
+      const roomNames = names ? names.split(',') : null;
+      
+      const rooms = await roomService.listRooms(roomNames);
       res.json({ rooms });
     } catch (error) {
       console.error('Error listing rooms:', error);
@@ -114,6 +128,39 @@ const setupLiveKitRoutes = (app) => {
     } catch (error) {
       console.error('Error deleting room:', error);
       res.status(500).json({ error: 'Failed to delete room' });
+    }
+  });
+
+  // List participants in a room
+  app.get('/api/livekit/rooms/:roomName/participants', async (req, res) => {
+    try {
+      if (!roomService) {
+        return res.status(503).json({ error: 'LiveKit service unavailable' });
+      }
+
+      const { roomName } = req.params;
+      const participants = await roomService.listParticipants(roomName);
+      res.json({ participants });
+    } catch (error) {
+      console.error('Error listing participants:', error);
+      res.status(500).json({ error: 'Failed to list participants' });
+    }
+  });
+
+  // Remove participant from a room
+  app.delete('/api/livekit/rooms/:roomName/participants/:identity', async (req, res) => {
+    try {
+      if (!roomService) {
+        return res.status(503).json({ error: 'LiveKit service unavailable' });
+      }
+
+      const { roomName, identity } = req.params;
+      await roomService.removeParticipant(roomName, identity);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error removing participant:', error);
+      res.status(500).json({ error: 'Failed to remove participant' });
     }
   });
 };
