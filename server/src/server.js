@@ -3,7 +3,8 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-require('dotenv').config(); // Added to load environment variables
+import dotenv from 'dotenv';
+dotenv.config(); // Added to load environment variables
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -71,11 +72,51 @@ if (fs.existsSync(publicPath)) {
 }
 
 // LiveKit routes implementation
+import { AccessToken } from 'livekit-server-sdk';
+
 const setupLiveKitRoutes = (app) => {
   app.get('/livekit/token', (req, res) => {
-    // Replace with your LiveKit token generation logic
-    const token = process.env.LIVEKIT_TOKEN || 'mock-token'; // Mock token for testing
-    res.json({ token });
+    try {
+      const { identity, name } = req.query;
+      
+      // Validate required parameters
+      if (!identity) {
+        return res.status(400).json({ error: 'Missing identity parameter' });
+      }
+      
+      // Get LiveKit credentials from environment variables
+      const apiKey = process.env.LIVEKIT_API_KEY;
+      const apiSecret = process.env.LIVEKIT_API_SECRET;
+      
+      if (!apiKey || !apiSecret) {
+        console.error('LiveKit credentials not configured');
+        return res.status(500).json({ error: 'LiveKit credentials not configured' });
+      }
+      
+      // Create token with specified identity
+      const at = new AccessToken(apiKey, apiSecret, {
+        identity: String(identity),
+        name: String(name || identity),
+      });
+      
+      // Grant permissions based on application needs
+      at.addGrant({ 
+        roomJoin: true, 
+        room: '*',  // Allow access to any room
+        canPublish: true,
+        canSubscribe: true 
+      });
+      
+      // Generate the JWT token
+      const token = at.toJwt();
+      console.log(`Generated token for ${identity}`);
+      
+      // Return the token to the client
+      res.json({ token });
+    } catch (error) {
+      console.error('Error generating LiveKit token:', error);
+      res.status(500).json({ error: 'Failed to generate token' });
+    }
   });
 };
 
