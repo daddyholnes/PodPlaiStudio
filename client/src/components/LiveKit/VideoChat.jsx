@@ -70,16 +70,18 @@ function VideoLayout() {
   }
 
   return (
-    <GridLayout tracks={tracks} className="video-grid">
-      {tracks.map((track) => (
-        <ParticipantTile
-          key={track.participant.identity + track.source}
-          participant={track.participant}
-          source={track.source}
-          className="video-tile"
-        />
-      ))}
-    </GridLayout>
+    <div className="video-grid">
+      <GridLayout>
+        {Array.isArray(tracks) && tracks.map((track) => (
+          <ParticipantTile
+            key={track.participant.identity + track.source}
+            participant={track.participant}
+            source={track.source}
+            className="video-tile"
+          />
+        ))}
+      </GridLayout>
+    </div>
   );
 }
 
