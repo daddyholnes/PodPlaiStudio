@@ -1,82 +1,19 @@
+import { LiveKitRoom } from '@livekit/components-react';
 import React from 'react';
-import { 
-  LiveKitRoom,
-  VideoConference,
-  RoomAudioRenderer,
-  ControlBar
-} from '@livekit/components-react';
-import '@livekit/components-styles';
 
-const LiveKitProvider = ({ 
-  children,
-  token,
-  serverUrl,
-  room = 'default-room', // Provide default room name
-  onConnected,
-  onDisconnected,
-  onError
-}) => {
-  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
-  const [roomError, setRoomError] = useState(null);
-
-  useEffect(() => {
-    if (!room) return;
-    
-    const createRoom = async () => {
-      setIsCreatingRoom(true);
-      try {
-        const response = await fetch('/api/livekit/rooms', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomName: room })
-        });
-        if (!response.ok) throw new Error('Failed to create room');
-      } catch (err) {
-        setRoomError(err.message);
-        onError?.(err);
-      } finally {
-        setIsCreatingRoom(false);
-      }
-    };
-    createRoom();
-  }, [room]);
-
-  if (!token || !serverUrl) {
-    return (
-      <div className="livekit-provider-placeholder">
-        <p>Please provide LiveKit token and server URL.</p>
-      </div>
-    );
-  }
-
-  if (isCreatingRoom) {
-    return (
-      <div className="livekit-provider-placeholder">
-        <p>Creating room...</p>
-      </div>
-    );
-  }
-
-  if (roomError) {
-    return (
-      <div className="livekit-provider-placeholder">
-        <p>Error creating room: {roomError}</p>
-        <button onClick={() => window.location.reload()}>Retry</button>
-      </div>
-    );
-  }
+const LiveKitProvider = ({ children }) => {
+  // These would come from your server
+  const token = "your-token"; // Will be provided by server
+  const serverUrl = "wss://your-livekit-server"; // Your LiveKit server URL
 
   return (
     <LiveKitRoom
       token={token}
       serverUrl={serverUrl}
-      room={room}
-      onConnected={onConnected}
-      onDisconnected={onDisconnected}
-      onError={onError}
-      data-lk-theme="default"
+      connect={true}
+      audio={true}
+      video={true}
     >
-      <RoomAudioRenderer />
       {children}
     </LiveKitRoom>
   );
@@ -99,7 +36,7 @@ export const withLiveKitProvider = (Component) => {
         </div>
       );
     }
-
+    
     return (
       <LiveKitProvider 
         token={token} 
