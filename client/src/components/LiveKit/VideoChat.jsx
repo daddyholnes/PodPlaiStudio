@@ -1,49 +1,57 @@
 
 import React from 'react';
-import {
-  GridLayout,
-  ParticipantTile,
-  useTracks,
-  ControlBar,
-  useRoom
+import { 
+  LiveKitRoom, 
+  VideoConference,
+  RoomAudioRenderer
 } from '@livekit/components-react';
-import { Track } from 'livekit-client';
+import '@livekit/components-styles';
+import { fetchRoomToken } from '../../services/liveKitService';
 
-const VideoChat = () => {
-  // Get all camera and microphone tracks
-  const tracks = useTracks([
-    { source: Track.Source.Camera, withPlaceholder: true },
-    { source: Track.Source.Microphone }
-  ]);
+const VideoChat = ({ roomName, participantName }) => {
+  const [token, setToken] = React.useState(null);
+  const [error, setError] = React.useState(null);
   
-  const room = useRoom();
-
+  React.useEffect(() => {
+    const getToken = async () => {
+      try {
+        if (!roomName || !participantName) {
+          throw new Error('Room name and participant name are required');
+        }
+        
+        const token = await fetchRoomToken(roomName, participantName);
+        setToken(token);
+      } catch (err) {
+        console.error('Error getting token:', err);
+        setError(err.message);
+      }
+    };
+    
+    getToken();
+  }, [roomName, participantName]);
+  
+  if (error) {
+    return <div className="p-4 bg-red-100 text-red-800 rounded">Error: {error}</div>;
+  }
+  
+  if (!token) {
+    return <div className="p-4">Loading connection...</div>;
+  }
+  
   return (
-    <div style={{ 
-      height: '100%', 
-      width: '100%', 
-      display: 'flex', 
-      flexDirection: 'column'
-    }}>
-      <div style={{ flex: 1, minHeight: 0 }}>
-        <GridLayout tracks={tracks} style={{ height: '100%' }}>
-          <ParticipantTile />
-        </GridLayout>
-      </div>
-      
-      <ControlBar controls={{ 
-        microphone: true, 
-        camera: true, 
-        screenShare: true, 
-        leave: true 
-      }} />
-      
-      {room && (
-        <div style={{ padding: '10px', backgroundColor: '#f0f0f0' }}>
-          <p>Connected to room: {room.name}</p>
-          <p>Participants: {room.participants.size + 1}</p>
-        </div>
-      )}
+    <div className="video-chat-container">
+      <LiveKitRoom
+        video={true}
+        audio={true}
+        token={token}
+        serverUrl="wss://dartopia-gvu1e64v.livekit.cloud"
+        // Use data attributes for styling
+        data-lk-theme="default"
+        style={{ height: '400px', width: '100%' }}
+      >
+        <VideoConference />
+        <RoomAudioRenderer />
+      </LiveKitRoom>
     </div>
   );
 };

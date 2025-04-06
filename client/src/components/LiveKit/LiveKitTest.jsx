@@ -1,8 +1,7 @@
 
 import React, { useState } from 'react';
 import { createRoom } from '../../services/liveKitService';
-import { useMediaDevices } from '@livekit/components-react';
-import LiveKitProvider from './LiveKitProvider';
+import VideoChat from './VideoChat';
 
 const LiveKitTest = () => {
   const [roomCreated, setRoomCreated] = useState(false);
@@ -88,21 +87,15 @@ const LiveKitTest = () => {
           )}
         </div>
       ) : (
-        <LiveKitProvider roomName={roomName} participantName={participantName}>
-          <div className="bg-gray-100 p-4 rounded">
-            <h3 className="font-bold mb-2">Connected to LiveKit Room</h3>
-            <p>Room: {roomName}</p>
-            <p>Participant: {participantName}</p>
-            <div className="mt-4">
-              <button 
-                onClick={() => setIsJoined(false)}
-                className="bg-red-500 text-white px-4 py-2 rounded"
-              >
-                Leave Room
-              </button>
-            </div>
-          </div>
-        </LiveKitProvider>
+        <div>
+          <VideoChat roomName={roomName} participantName={participantName} />
+          <button 
+            onClick={() => setIsJoined(false)}
+            className="bg-red-500 text-white px-4 py-2 rounded mt-4"
+          >
+            Leave Room
+          </button>
+        </div>
       )}
     </div>
   );
