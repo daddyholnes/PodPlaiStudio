@@ -17,7 +17,7 @@ const DEMO_LIVEKIT_URL = "wss://demo.livekit.cloud";
 
 const VideoChat = ({ token, roomName }) => {
   const [connectionError, setConnectionError] = useState(null);
-  const serverUrl = import.meta.env.VITE_LIVEKIT_URL || DEMO_LIVEKIT_URL;
+  const serverUrl = import.meta.env.VITE_LIVEKIT_URL;
 
   if (!token) {
     return <div className="loading-message">Waiting for connection token...</div>;

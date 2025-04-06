@@ -7,7 +7,7 @@ dotenv.config();
 
 const API_KEY = process.env.LIVEKIT_API_KEY || 'devkey';
 const API_SECRET = process.env.LIVEKIT_API_SECRET || 'secret';
-const LIVEKIT_URL = process.env.LIVEKIT_SERVER_URL || 'wss://demo.livekit.cloud';
+const LIVEKIT_URL = process.env.LIVEKIT_SERVER_URL;
 
 /**
  * Set up LiveKit routes for token generation and room management
