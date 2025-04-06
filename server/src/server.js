@@ -70,19 +70,7 @@ if (fs.existsSync(publicPath)) {
   app.use(express.static(publicPath));
 }
 
-// SPA fallback route
-app.get('*', (req, res) => {
-  if (fs.existsSync(path.join(distPath, 'index.html'))) {
-    res.sendFile(path.join(distPath, 'index.html'));
-  } else if (fs.existsSync(path.join(publicPath, 'index.html'))) {
-    res.sendFile(path.join(publicPath, 'index.html'));
-  } else {
-    res.status(404).send('Not found');
-  }
-});
-
-
-// Placeholder for LiveKit routes -  replace with actual implementation
+// LiveKit routes implementation
 const setupLiveKitRoutes = (app) => {
   app.get('/livekit/token', (req, res) => {
     // Replace with your LiveKit token generation logic
@@ -93,6 +81,17 @@ const setupLiveKitRoutes = (app) => {
 
 // Set up routes
 setupLiveKitRoutes(app); // Added LiveKit routes
+
+// SPA fallback route
+app.get('*', (req, res) => {
+  if (fs.existsSync(path.join(distPath, 'index.html'))) {
+    res.sendFile(path.join(distPath, 'index.html'));
+  } else if (fs.existsSync(path.join(publicPath, 'index.html'))) {
+    res.sendFile(path.join(publicPath, 'index.html'));
+  } else {
+    res.status(404).send('Not found');
+  }
+});
 
 
 // Start the server
