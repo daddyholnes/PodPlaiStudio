@@ -23,16 +23,38 @@ const LiveKitProvider = ({ children }) => {
       console.log(`Creating room: ${roomName}`);
 
       // First create the room on the server
-      await axios.post('/api/livekit/create-room', { roomName });
+      try {
+        await axios.post('/api/livekit/create-room', { roomName });
+      } catch (err) {
+        console.error('Error creating room:', err);
+        setError(`Failed to create room: ${err.response?.data?.error || err.message}`);
+        setLoading(false);
+        throw err;
+      }
 
       // Then get a token to join the room
       console.log(`Fetching token for room: ${roomName}, identity: ${participantName}`);
-      const response = await axios.post('/api/livekit/token', { 
-        roomName, 
-        participantName 
-      });
+      let response;
+      try {
+        response = await axios.post('/api/livekit/token', { 
+          roomName, 
+          participantName 
+        });
+      } catch (err) {
+        console.error('Error getting token:', err);
+        setError(`Failed to get token: ${err.response?.data?.error || err.message}`);
+        setLoading(false);
+        throw err;
+      }
 
       const token = response.data.token;
+      if (!token) {
+        const tokenError = new Error('No token received from server');
+        console.error(tokenError);
+        setError('No token received from server');
+        setLoading(false);
+        throw tokenError;
+      }
 
       setConnected(true);
       setLoading(false);

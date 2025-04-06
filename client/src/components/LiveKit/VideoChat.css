@@ -1,142 +1,78 @@
 .video-chat-container {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  width: 100%;
-  background-color: #1a1a1a;
-  color: white;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
 }
 
-.video-chat-loading {
+.video-room {
+  flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  width: 100%;
-  font-size: 1.2rem;
-  color: #888;
+  flex-direction: column;
 }
 
 .video-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-  padding: 16px;
   flex: 1;
-  overflow-y: auto;
+  gap: 8px;
+  padding: 16px;
 }
 
 .video-tile {
-  position: relative;
-  aspect-ratio: 16/9;
-  background-color: #2a2a2a;
   border-radius: 8px;
   overflow: hidden;
+  background-color: #333;
 }
 
-.local-participant {
-  border: 2px solid #4285f4;
-}
-
-.video-wrapper {
-  height: 100%;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.video-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  width: 100%;
-  background-color: #3a3a3a;
-  font-size: 2.5rem;
-  color: #ddd;
-}
-
-.participant-info {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 8px;
-  background-color: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.9rem;
-}
-
-.muted-indicator {
-  margin-left: 6px;
-}
-
-.video-controls {
-  display: flex;
-  justify-content: center;
-  padding: 16px;
-  gap: 16px;
-  background-color: #2a2a2a;
-}
-
-.control-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: none;
-  background-color: #444;
-  color: white;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.control-button:hover {
-  background-color: #555;
-}
-
-.control-button.muted,
-.control-button.camera-off {
-  background-color: #ea4335;
-}
-
-.control-button.leave {
-  background-color: #ea4335;
-  width: auto;
-  padding: 0 20px;
-  border-radius: 24px;
-}
-
-.video-chat {
-  width: 100%;
-  height: 400px;
-  background-color: #2c2c2c;
-  border-radius: 8px;
-  position: relative;
-  overflow: hidden;
-}
-
-.status-message {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background-color: rgba(0, 0, 0, 0.6);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 14px;
-  z-index: 10;
-}
-
-.placeholder-text {
-  color: white;
+.loading-message, .empty-room-message {
   text-align: center;
   padding: 20px;
-  background-color: rgba(0, 0, 0, 0.4);
-  border-radius: 8px;
+  font-size: 18px;
+  color: #666;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.connection-error {
+  background-color: rgba(255, 235, 235, 0.95);
+  border-left: 4px solid #e53935;
+  padding: 20px;
+  margin: 20px;
+  border-radius: 6px;
+  color: #721c24;
+  text-align: center;
+}
+
+.connection-error h3 {
+  margin-top: 0;
+  color: #c62828;
+}
+
+.connection-error p {
+  margin: 8px 0;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .video-chat-container {
+    background-color: #1e1e1e;
+  }
+
+  .loading-message, .empty-room-message {
+    color: #ccc;
+  }
+
+  .connection-error {
+    background-color: rgba(45, 20, 20, 0.95);
+    color: #f8d7da;
+  }
+
+  .connection-error h3 {
+    color: #f48fb1;
+  }
 }

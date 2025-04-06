@@ -11,22 +11,29 @@ const LiveKitTest = () => {
   const [joinedRoom, setJoinedRoom] = useState(null);
   const [joinedAs, setJoinedAs] = useState(null);
   const [token, setToken] = useState(null);
+  const [localError, setLocalError] = useState(null);
 
   const handleJoinRoom = async (e) => {
     e.preventDefault();
     
     if (!roomName || !username) {
-      alert('Please enter both room name and username');
+      setLocalError('Please enter both room name and username');
       return;
     }
     
     try {
+      setLocalError(null);
       const result = await createAndJoinRoom(roomName, username);
-      setToken(result.token);
-      setJoinedRoom(result.room);
-      setJoinedAs(result.participant);
+      if (result && result.token) {
+        setToken(result.token);
+        setJoinedRoom(result.room);
+        setJoinedAs(result.participant);
+      } else {
+        setLocalError('Failed to get a valid token');
+      }
     } catch (err) {
       console.error('Failed to join room:', err);
+      setLocalError(err.message || 'Failed to join room');
     }
   };
 
@@ -34,7 +41,15 @@ const LiveKitTest = () => {
     setToken(null);
     setJoinedRoom(null);
     setJoinedAs(null);
+    setLocalError(null);
   };
+
+  const resetError = () => {
+    setLocalError(null);
+  };
+
+  // Determine if there's an error to display
+  const displayError = error || localError;
 
   return (
     <div className="livekit-test-container">
@@ -44,7 +59,12 @@ const LiveKitTest = () => {
         <div className="join-form-container">
           <div className="join-form">
             <h2>Join a Video Room</h2>
-            {error && <div className="error-message">{error}</div>}
+            {displayError && (
+              <div className="error-message">
+                {displayError}
+                <button onClick={resetError} className="close-error">×</button>
+              </div>
+            )}
             
             <form onSubmit={handleJoinRoom}>
               <div className="form-group">
@@ -54,6 +74,7 @@ const LiveKitTest = () => {
                   id="roomName"
                   value={roomName}
                   onChange={(e) => setRoomName(e.target.value)}
+                  placeholder="Enter a room name"
                   required
                 />
               </div>
@@ -65,6 +86,7 @@ const LiveKitTest = () => {
                   id="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter your name"
                   required
                 />
               </div>
@@ -77,6 +99,10 @@ const LiveKitTest = () => {
                 {loading ? 'Connecting...' : 'Join Room'}
               </button>
             </form>
+            
+            <div className="server-info">
+              <p>Using LiveKit server: {import.meta.env.VITE_LIVEKIT_URL || "Default Demo Server"}</p>
+            </div>
           </div>
         </div>
       ) : (

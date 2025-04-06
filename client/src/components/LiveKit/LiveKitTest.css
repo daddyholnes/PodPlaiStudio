@@ -100,8 +100,38 @@
   background-color: #ffeaea;
   border-radius: 4px;
   border-left: 4px solid #db4437;
-  margin-top: 15px; /* from original */
-  text-align: center; /* from original */
+  margin-top: 15px;
+  text-align: center;
+  position: relative;
+}
+
+.close-error {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: none;
+  border: none;
+  color: #db4437;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.close-error:hover {
+  background-color: rgba(219, 68, 55, 0.1);
+}
+
+.server-info {
+  margin-top: 20px;
+  font-size: 12px;
+  color: #999;
+  text-align: center;
 }
 
 .room-info {

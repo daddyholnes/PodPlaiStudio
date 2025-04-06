@@ -7,13 +7,17 @@ dotenv.config();
 
 const API_KEY = process.env.LIVEKIT_API_KEY || 'devkey';
 const API_SECRET = process.env.LIVEKIT_API_SECRET || 'secret';
-const LIVEKIT_URL = process.env.LIVEKIT_SERVER_URL || 'ws://localhost:7880';
+const LIVEKIT_URL = process.env.LIVEKIT_SERVER_URL || 'wss://demo.livekit.cloud';
 
 /**
  * Set up LiveKit routes for token generation and room management
  * @param {express.Express} app - Express application
  */
 export function setupLiveKitRoutes(app) {
+  console.log("Setting up LiveKit routes with environment variables:");
+  console.log(`- API_KEY: ${API_KEY}`);
+  console.log(`- LIVEKIT_URL: ${LIVEKIT_URL}`);
+  
   // Route to create a room
   app.post('/api/livekit/create-room', (req, res) => {
     const { roomName } = req.body;
@@ -26,10 +30,12 @@ export function setupLiveKitRoutes(app) {
     
     // In a real implementation, you would use the LiveKit server API to create a room
     // For now, we'll simulate a successful room creation
-    res.status(201).json({
+    const roomInfo = {
       name: roomName,
       created: new Date().toISOString()
-    });
+    };
+    console.log('Room created successfully:', roomInfo);
+    res.status(201).json(roomInfo);
   });
 
   // Route to generate a token for a participant to join a room
@@ -37,6 +43,7 @@ export function setupLiveKitRoutes(app) {
     const { roomName, participantName } = req.body;
     
     if (!roomName || !participantName) {
+      console.error('Missing required fields:', { roomName, participantName });
       return res.status(400).json({ error: 'Room name and participant name are required' });
     }
 
@@ -56,11 +63,15 @@ export function setupLiveKitRoutes(app) {
         canSubscribe: true,
       });
 
+      const jwt = token.toJwt();
+      console.log('Token generated successfully');
+      console.log('LiveKit connection URL:', LIVEKIT_URL);
+      
       // Return the token
-      res.json({ token: token.toJwt() });
+      res.json({ token: jwt });
     } catch (error) {
       console.error('Error generating token:', error);
-      res.status(500).json({ error: 'Failed to generate token' });
+      res.status(500).json({ error: `Failed to generate token: ${error.message}` });
     }
   });
 }
