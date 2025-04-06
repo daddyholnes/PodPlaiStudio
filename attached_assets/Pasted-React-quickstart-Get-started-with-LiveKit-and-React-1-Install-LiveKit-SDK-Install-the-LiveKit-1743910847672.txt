@@ -1,0 +1,91 @@
+React quickstart
+Get started with LiveKit and React.
+
+1. Install LiveKit SDK
+Install the LiveKit SDK:
+
+yarnnpm
+yarn add @livekit/components-react @livekit/components-styles livekit-client
+Copy
+2. Join a room
+Update the serverUrl and token values and copy and paste the following into your src/App.tsx file. To generate a token for this example, see Creating a token.
+
+Note
+This example hardcodes a token. In a real app, your server generates a token for you.
+
+import {
+  ControlBar,
+  GridLayout,
+  ParticipantTile,
+  RoomAudioRenderer,
+  useTracks,
+  RoomContext,
+} from '@livekit/components-react';
+import { Room, Track } from 'livekit-client';
+import '@livekit/components-styles';
+import { useState } from 'react';
+
+const serverUrl = 'wss://dartopia-gvu1e64v.livekit.cloud';
+const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDM5MTgwMzYsImlzcyI6IkFQSVdrVkJ0eFNaN1NzNCIsIm5iZiI6MTc0MzkxMDgzNiwic3ViIjoicXVpY2tzdGFydCB1c2VyIDc1cmVibiIsInZpZGVvIjp7ImNhblB1Ymxpc2giOnRydWUsImNhblB1Ymxpc2hEYXRhIjp0cnVlLCJjYW5TdWJzY3JpYmUiOnRydWUsInJvb20iOiJxdWlja3N0YXJ0IHJvb20iLCJyb29tSm9pbiI6dHJ1ZX19.cuMhkIFy_L0anxlJ_jneImgv5U9XUdK4lviTCsfTfy0';
+
+export default function App() {
+  const [room] = useState(() => new Room({
+    // Optimize video quality for each participant's screen
+    adaptiveStream: true,
+    // Enable automatic audio/video quality optimization
+    dynacast: true,
+  }));
+
+  // Connect to room
+  useEffect(() => {
+    let mounted = true;
+    
+    const connect = async () => {
+      if (mounted) {
+        await room.connect(serverUrl, token);
+      }
+    };
+    connect();
+
+    return () => {
+      mounted = false;
+      room.disconnect();
+    };
+  }, [room]);
+
+  return (
+    <RoomContext.Provider value={room}>
+      <div data-lk-theme="default" style={{ height: '100vh' }}>
+        {/* Your custom component with basic video conferencing functionality. */}
+        <MyVideoConference />
+        {/* The RoomAudioRenderer takes care of room-wide audio for you. */}
+        <RoomAudioRenderer />
+        {/* Controls for the user to start/stop audio, video, and screen share tracks */}
+        <ControlBar />
+      </div>
+    </RoomContext.Provider>
+  );
+}
+
+function MyVideoConference() {
+  // `useTracks` returns all camera and screen share tracks. If a user
+  // joins without a published camera track, a placeholder track is returned.
+  const tracks = useTracks(
+    [
+      { source: Track.Source.Camera, withPlaceholder: true },
+      { source: Track.Source.ScreenShare, withPlaceholder: false },
+    ],
+    { onlySubscribed: false },
+  );
+  return (
+    <GridLayout tracks={tracks} style={{ height: 'calc(100vh - var(--lk-control-bar-height))' }}>
+      {/* The GridLayout accepts zero or one child. The child is used
+      as a template to render all passed in tracks. */}
+      <ParticipantTile />
+    </GridLayout>
+  );
+}
+Copy
+Next steps
+Set up a server to generate tokens for your app at runtime by following this guide: Generating Tokens.
+If you're looking to dive deeper into building your LiveKit app with React, check out the React Components reference section. There you'll find a comprehensive list of available components and React hooks, along with examples of how to use them. This is a great resource for building
