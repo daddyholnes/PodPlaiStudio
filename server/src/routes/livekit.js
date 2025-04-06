@@ -15,30 +15,45 @@ const setupLiveKitRoutes = (app) => {
     console.warn('LiveKit environment variables not set properly, using default values for development');
   }
 
-  // Get a token for a room
-  router.post('/token', async (req, res) => {
+  //LiveKit routes implementation
+  app.get('/livekit/token', (req, res) => {
     try {
-      const { roomName = 'default-room', participantName = `user-${Date.now()}` } = req.body;
+      const { identity, room } = req.query;
 
-      // Create token with permissions
+      if (!identity || !room) {
+        return res.status(400).json({ error: 'Missing required parameters: identity and room' });
+      }
+
+      // Get credentials from environment variables
+      const apiKey = process.env.LIVEKIT_API_KEY;
+      const apiSecret = process.env.LIVEKIT_API_SECRET;
+
+      if (!apiKey || !apiSecret) {
+        console.error('LiveKit API credentials not configured');
+        return res.status(500).json({ error: 'LiveKit API credentials not configured' });
+      }
+
+      // Create a new access token
       const token = new AccessToken(apiKey, apiSecret, {
-        identity: participantName,
+        identity: identity,
+        name: identity // Use identity as the participant name
       });
 
-      token.addGrant({
-        roomJoin: true,
-        room: roomName,
-        canPublish: true,
-        canSubscribe: true,
-        canPublishData: true
-      });
+      // Grant permissions to the room
+      token.addGrant({ roomJoin: true, room });
 
-      res.json({ token: token.toJwt() });
+      // Generate the JWT token
+      const jwt = token.toJwt();
+      console.log(`Generated LiveKit token for ${identity} in room ${room}`);
+
+      // Return the token
+      res.json({ token: jwt });
     } catch (error) {
-      console.error('Error generating token:', error);
-      res.status(500).json({ error: error.message });
+      console.error('Error generating LiveKit token:', error);
+      res.status(500).json({ error: 'Failed to generate token: ' + error.message });
     }
   });
+
 
   app.use('/api/livekit', router);
   console.log('LiveKit routes initialized');
