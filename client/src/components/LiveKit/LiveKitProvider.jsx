@@ -11,7 +11,7 @@ const LiveKitProvider = ({
   children,
   token,
   serverUrl,
-  room,
+  room = 'default-room', // Provide default room name
   onConnected,
   onDisconnected,
   onError

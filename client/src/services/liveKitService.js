@@ -8,7 +8,7 @@ const API_BASE_URL = '/api/livekit';
  * @param {string} participantName - The display name of the participant
  * @returns {Promise<string>} A LiveKit JWT token
  */
-export const fetchRoomToken = async (roomName, participantName) => {
+export const fetchRoomToken = async (roomName = 'default-room', participantName = `user-${Date.now()}`) => {
   try {
     const response = await axios.post(`${API_BASE_URL}/token`, {
       roomName,
