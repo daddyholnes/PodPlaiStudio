@@ -5,6 +5,7 @@
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  font-family: 'Roboto', sans-serif;
 }
 
 .join-room-form {
@@ -60,6 +61,7 @@ button:disabled {
   padding: 10px 15px;
   background-color: #2c2c2c;
   color: white;
+  flex-direction: column; /* Added from changes */
 }
 
 .header-controls {
@@ -154,10 +156,34 @@ button:disabled {
   .main-content {
     flex-direction: column;
   }
-  
+
   .file-explorer-panel,
   .video-chat-panel {
     width: 100%;
     height: 200px;
   }
+}
+
+/* Added styles from changes */
+.app-nav {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.nav-button {
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.nav-button:hover {
+  opacity: 0.9;
+}
+
+.dashboard-container,
+.sandbox-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: white;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
