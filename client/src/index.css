@@ -55,11 +55,11 @@
   }
 
   * {
-    @apply border-border;
+    @apply border-neutral-200;
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white;
   }
   
   .font-google-sans {

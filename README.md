@@ -93,7 +93,9 @@ npm run dev
 
 5. **Access the application**
 
-Open your browser and navigate to `http://localhost:5000`
+Open your browser and navigate to `http://localhost:5050`
+
+Note: The server will automatically find an available port in the range 5050-5100 if the default port (5050) is already in use. Check the terminal output for the actual port being used.
 
 ## Development
 

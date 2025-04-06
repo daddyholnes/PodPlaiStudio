@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { useLocalParticipant, useRoom } from '@livekit/components-react';
+import { useLocalParticipant } from '@livekit/components-react';
 import { Track } from 'livekit-client';
 
 const ScreenShare = () => {
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const { localParticipant } = useLocalParticipant();
-  const room = useRoom();
 
   const toggleScreenShare = async () => {
     if (!localParticipant) return;
@@ -25,7 +24,12 @@ const ScreenShare = () => {
     } else {
       try {
         // Start screen sharing
-        const screenTrack = await room.localParticipant.createScreenShareTrack({
+        if (!localParticipant?.room) {
+          console.error('Room not available');
+          return;
+        }
+        
+        const screenTrack = await localParticipant.room.localParticipant.createScreenShareTrack({
           audio: true,
           resolution: { width: 1920, height: 1080 },
         });

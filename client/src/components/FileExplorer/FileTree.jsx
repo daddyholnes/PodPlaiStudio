@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { VirtualList } from 'react-virtualized';
+import { List as VirtualList } from 'react-virtualized';
 import { FaFolder, FaFolderOpen, FaFile, FaPlus, FaTrash, FaEdit } from 'react-icons/fa';
 import { listFiles, createFile, deleteFile, renameFile } from '../../services/fileService';
 
