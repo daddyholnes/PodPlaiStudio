@@ -3,6 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+require('dotenv').config(); // Added to load environment variables
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -37,14 +38,14 @@ app.post('/api/terminal/sessions/:id/resize', (req, res) => {
 // Serve font files with correct MIME type
 app.get('/assets/fonts/:filename', (req, res) => {
   const filename = req.params.filename;
-  
+
   // Check multiple potential locations
   const fontPaths = [
     path.join(__dirname, '../../client/public/assets/fonts', filename),
     path.join(__dirname, '../../client/dist/assets/fonts', filename),
     path.join(__dirname, '../../client/src/assets/fonts', filename)
   ];
-  
+
   // Try each path until we find the file
   for (const fontPath of fontPaths) {
     if (fs.existsSync(fontPath)) {
@@ -52,7 +53,7 @@ app.get('/assets/fonts/:filename', (req, res) => {
       return res.sendFile(fontPath);
     }
   }
-  
+
   // If font not found in any location
   return res.status(404).send('Font not found');
 });
@@ -79,6 +80,20 @@ app.get('*', (req, res) => {
     res.status(404).send('Not found');
   }
 });
+
+
+// Placeholder for LiveKit routes -  replace with actual implementation
+const setupLiveKitRoutes = (app) => {
+  app.get('/livekit/token', (req, res) => {
+    // Replace with your LiveKit token generation logic
+    const token = process.env.LIVEKIT_TOKEN || 'mock-token'; // Mock token for testing
+    res.json({ token });
+  });
+};
+
+// Set up routes
+setupLiveKitRoutes(app); // Added LiveKit routes
+
 
 // Start the server
 app.listen(PORT, () => {
