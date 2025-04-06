@@ -1,7 +1,6 @@
 
 const { AccessToken } = require('livekit-server-sdk');
 const express = require('express');
-const router = express.Router();
 
 /**
  * Sets up LiveKit related routes

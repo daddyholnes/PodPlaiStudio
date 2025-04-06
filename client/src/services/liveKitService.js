@@ -1,42 +1,34 @@
 import axios from 'axios';
 
 /**
- * Fetches a LiveKit token for room access
- * @param {string} roomName - The name of the room to join
- * @param {string} participantName - The display name of the participant
- * @returns {Promise<string>} A LiveKit JWT token
+ * Fetches a LiveKit token for a specific room and identity
+ * @param {string} roomName - Name of the room to join
+ * @param {string} identity - User identity (unique identifier)
+ * @returns {Promise<Object>} Token data
  */
-export const fetchRoomToken = async (roomName, participantName) => {
+export const fetchRoomToken = async (roomName, identity) => {
   try {
-    console.log(`Fetching token for room: ${roomName}, participant: ${participantName}`);
-    const response = await axios.get('/livekit/token', {
-      params: {
-        room: roomName || 'default-room',
-        identity: participantName
-      }
-    });
-    return response.data.token;
+    const response = await axios.get(`/livekit/token?room=${roomName}&identity=${identity}`);
+    return response.data;
   } catch (error) {
-    console.error("Error fetching LiveKit token:", error);
-    throw error;
+    console.error('Error fetching LiveKit token:', error);
+    throw new Error('Failed to fetch LiveKit token');
   }
 };
 
 /**
  * Creates a new LiveKit room
- * @param {Object} options - Room creation options
- * @param {string} options.roomName - The name of the room to create
- * @returns {Promise<Object>} Room details
+ * @param {Object} params - Room creation parameters
+ * @param {string} params.roomName - Name of the room to create
+ * @returns {Promise<Object>} Room data
  */
 export const createRoom = async ({ roomName }) => {
   try {
-    console.log(`Creating room: ${roomName}`);
     const response = await axios.post('/livekit/rooms', { roomName });
-    console.log('Room created:', response.data);
-    return response.data.room;
+    return response.data;
   } catch (error) {
-    console.error('Error creating room:', error);
-    throw new Error('Failed to create room: ' + (error.response?.data?.error || error.message));
+    console.error('Error creating LiveKit room:', error);
+    throw new Error('Failed to create LiveKit room');
   }
 };
 

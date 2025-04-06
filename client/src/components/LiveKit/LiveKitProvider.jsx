@@ -1,51 +1,33 @@
-
 import React, { useState, useEffect } from 'react';
 import { LiveKitRoom } from '@livekit/components-react';
 import { fetchRoomToken } from '../../services/liveKitService';
 
-const LiveKitProvider = ({ children, roomName = 'default-room', participantName }) => {
+const LiveKitProvider = ({ children, roomName, participantName }) => {
   const [token, setToken] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Use the VITE environment variable or fall back to development URL
   const serverUrl = import.meta.env.VITE_LIVEKIT_SERVER_URL || 'wss://dartopia-gvu1e64v.livekit.cloud';
 
   useEffect(() => {
-    const initLiveKit = async () => {
-      setIsLoading(true);
+    if (!roomName || !participantName) {
+      console.error('Room name or participant name is missing');
+      return;
+    }
+
+    const getToken = async () => {
       try {
-        // Generate identity if not provided
-        const identity = participantName || `user-${Date.now().toString(36)}`;
-
-        // Get token for this room and participant
-        const tokenValue = await fetchRoomToken(roomName, identity);
+        console.log(`Fetching token for room: ${roomName}, participant: ${participantName}`);
+        const tokenData = await fetchRoomToken(roomName, participantName);
         console.log('Token received for room:', roomName);
-
-        setToken(tokenValue);
-        setError(null);
-      } catch (err) {
-        console.error('LiveKit initialization error:', err);
-        setError(err.message || 'Failed to initialize LiveKit');
-      } finally {
-        setIsLoading(false);
+        setToken(tokenData.token);
+      } catch (error) {
+        console.error('Failed to fetch LiveKit token:', error);
       }
     };
 
-    initLiveKit();
+    getToken();
   }, [roomName, participantName]);
 
-  if (isLoading) {
-    return <div className="livekit-loading">Loading LiveKit connection...</div>;
-  }
-
-  if (error || !token) {
-    return (
-      <div className="livekit-error">
-        <p>Error connecting to LiveKit: {error || 'No token available'}</p>
-        <button onClick={() => window.location.reload()}>Retry</button>
-      </div>
-    );
+  if (!token) {
+    return <div>Loading LiveKit connection...</div>;
   }
 
   return (
