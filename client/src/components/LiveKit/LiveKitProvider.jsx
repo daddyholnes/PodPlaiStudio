@@ -1,102 +1,102 @@
 
-import React, { createContext, useContext, useState } from 'react';
-import axios from 'axios';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { LiveKitRoom } from '@livekit/components-react';
+import '@livekit/components-styles';
 
-// Create context for LiveKit functionality
-const LiveKitContext = createContext(null);
+const LiveKitContext = createContext();
 
-// Custom hook to access the LiveKit context
 export const useLiveKit = () => useContext(LiveKitContext);
 
-const LiveKitProvider = ({ children }) => {
-  const [room, setRoom] = useState(null);
-  const [connected, setConnected] = useState(false);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+export const LiveKitProvider = ({ children }) => {
+  const [token, setToken] = useState(null);
+  const [roomName, setRoomName] = useState('');
+  const [identity, setIdentity] = useState('');
+  const [isConnected, setIsConnected] = useState(false);
 
-  // Function to create and join a room
-  const createAndJoinRoom = async (roomName, participantName) => {
+  const createRoom = async (name) => {
     try {
-      setLoading(true);
-      setError(null);
-
-      console.log(`Creating room: ${roomName}`);
-
-      // First create the room on the server
-      try {
-        await axios.post('/api/livekit/create-room', { roomName });
-      } catch (err) {
-        console.error('Error creating room:', err);
-        setError(`Failed to create room: ${err.response?.data?.error || err.message}`);
-        setLoading(false);
-        throw err;
+      console.log(`Creating room: ${name}`);
+      const response = await fetch('/api/livekit/create-room', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create room');
       }
-
-      // Then get a token to join the room
-      console.log(`Fetching token for room: ${roomName}, identity: ${participantName}`);
-      let response;
-      try {
-        response = await axios.post('/api/livekit/token', { 
-          roomName, 
-          participantName 
-        });
-      } catch (err) {
-        console.error('Error getting token:', err);
-        setError(`Failed to get token: ${err.response?.data?.error || err.message}`);
-        setLoading(false);
-        throw err;
-      }
-
-      const token = response.data.token;
-      if (!token) {
-        const tokenError = new Error('No token received from server');
-        console.error(tokenError);
-        setError('No token received from server');
-        setLoading(false);
-        throw tokenError;
-      }
-
-      setConnected(true);
-      setLoading(false);
-
-      return {
-        token,
-        room: roomName,
-        participant: participantName
-      };
-    } catch (err) {
-      console.error('Error joining room:', err);
-      setError(err.message || 'Failed to join room');
-      setLoading(false);
-      throw err;
+      
+      setRoomName(name);
+      return name;
+    } catch (error) {
+      console.error('Error creating room:', error);
+      return null;
     }
   };
 
-  // Function to leave a room
+  const joinRoom = async (room, username) => {
+    try {
+      console.log(`Fetching token for room: ${room}, identity: ${username}`);
+      const response = await fetch('/api/livekit/join-room', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ room, identity: username }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to join room');
+      }
+      
+      const { token } = await response.json();
+      setToken(token);
+      setRoomName(room);
+      setIdentity(username);
+      return token;
+    } catch (error) {
+      console.error('Error joining room:', error);
+      return null;
+    }
+  };
+
   const leaveRoom = () => {
-    if (room) {
-      room.disconnect();
-      setRoom(null);
-      setConnected(false);
-    }
-  };
-
-  // Context value
-  const contextValue = {
-    room,
-    setRoom,
-    connected,
-    error,
-    loading,
-    createAndJoinRoom,
-    leaveRoom
+    setToken(null);
+    setRoomName('');
+    setIdentity('');
+    setIsConnected(false);
   };
 
   return (
-    <LiveKitContext.Provider value={contextValue}>
-      {children}
+    <LiveKitContext.Provider
+      value={{
+        token,
+        roomName,
+        identity,
+        isConnected,
+        setIsConnected,
+        createRoom,
+        joinRoom,
+        leaveRoom,
+      }}
+    >
+      {token ? (
+        <LiveKitRoom
+          serverUrl={import.meta.env.VITE_LIVEKIT_SERVER_URL || 'wss://demo.livekit.cloud'}
+          token={token}
+          connectOptions={{ autoSubscribe: true }}
+          onConnected={() => setIsConnected(true)}
+          onDisconnected={() => setIsConnected(false)}
+          audio={true}
+          video={true}
+        >
+          {children}
+        </LiveKitRoom>
+      ) : (
+        children
+      )}
     </LiveKitContext.Provider>
   );
 };
-
-export default LiveKitProvider;

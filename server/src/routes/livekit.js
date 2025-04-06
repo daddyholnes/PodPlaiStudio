@@ -1,79 +1,70 @@
 
 import express from 'express';
-import dotenv from 'dotenv';
 import { AccessToken } from 'livekit-server-sdk';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
-const API_KEY = process.env.LIVEKIT_API_KEY || 'devkey';
-const API_SECRET = process.env.LIVEKIT_API_SECRET || 'secret';
-const LIVEKIT_URL = process.env.LIVEKIT_SERVER_URL;
+const router = express.Router();
 
-/**
- * Set up LiveKit routes for token generation and room management
- * @param {express.Express} app - Express application
- */
-export function setupLiveKitRoutes(app) {
-  console.log("Setting up LiveKit routes with environment variables:");
-  console.log(`- API_KEY: ${API_KEY}`);
-  console.log(`- LIVEKIT_URL: ${LIVEKIT_URL}`);
-  
-  // Route to create a room
-  app.post('/api/livekit/create-room', (req, res) => {
-    const { roomName } = req.body;
-    
-    if (!roomName) {
+const apiKey = process.env.LIVEKIT_API_KEY || 'devkey';
+const apiSecret = process.env.LIVEKIT_API_SECRET || 'secret';
+const livekitUrl = process.env.LIVEKIT_SERVER_URL || 'wss://demo.livekit.cloud';
+
+console.log('Setting up LiveKit routes with environment variables:');
+console.log(`- API_KEY: ${apiKey}`);
+console.log(`- LIVEKIT_URL: ${livekitUrl}`);
+
+// Create a new room
+router.post('/create-room', async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) {
       return res.status(400).json({ error: 'Room name is required' });
     }
-
-    console.log(`Creating room: ${roomName}`);
     
-    // In a real implementation, you would use the LiveKit server API to create a room
-    // For now, we'll simulate a successful room creation
-    const roomInfo = {
-      name: roomName,
-      created: new Date().toISOString()
-    };
-    console.log('Room created successfully:', roomInfo);
-    res.status(201).json(roomInfo);
-  });
-
-  // Route to generate a token for a participant to join a room
-  app.post('/api/livekit/token', (req, res) => {
-    const { roomName, participantName } = req.body;
+    // You would normally use the LiveKit RoomService for this,
+    // but for demo purposes, we'll just return success
+    // In a production environment, you would verify the room exists or create it
     
-    if (!roomName || !participantName) {
-      console.error('Missing required fields:', { roomName, participantName });
-      return res.status(400).json({ error: 'Room name and participant name are required' });
+    return res.status(200).json({ room: name });
+  } catch (error) {
+    console.error('Error creating room:', error);
+    return res.status(500).json({ error: 'Failed to create room' });
+  }
+});
+
+// Generate token to join a room
+router.post('/join-room', (req, res) => {
+  try {
+    const { room, identity } = req.body;
+    
+    if (!room || !identity) {
+      return res.status(400).json({ error: 'Room and identity are required' });
     }
-
-    console.log(`Generating token for ${participantName} to join room ${roomName}`);
     
-    try {
-      // Create a new access token
-      const token = new AccessToken(API_KEY, API_SECRET, {
-        identity: participantName,
-      });
-      
-      // Grant permissions to the room
-      token.addGrant({
-        roomJoin: true,
-        room: roomName,
-        canPublish: true,
-        canSubscribe: true,
-      });
+    // Create a new token
+    const token = new AccessToken(apiKey, apiSecret, {
+      identity,
+      ttl: 60 * 60 // 1 hour
+    });
+    
+    // Grant permissions to the room
+    token.addGrant({
+      roomJoin: true,
+      room,
+      canPublish: true,
+      canSubscribe: true,
+      canPublishData: true
+    });
+    
+    const jwt = token.toJwt();
+    return res.status(200).json({ token: jwt });
+    
+  } catch (error) {
+    console.error('Error generating token:', error);
+    return res.status(500).json({ error: 'Failed to generate token' });
+  }
+});
 
-      const jwt = token.toJwt();
-      console.log('Token generated successfully');
-      console.log('LiveKit connection URL:', LIVEKIT_URL);
-      
-      // Return the token
-      res.json({ token: jwt });
-    } catch (error) {
-      console.error('Error generating token:', error);
-      res.status(500).json({ error: `Failed to generate token: ${error.message}` });
-    }
-  });
-}
-
-export default { setupLiveKitRoutes };
+export default router;
