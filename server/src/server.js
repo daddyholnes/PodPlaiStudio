@@ -8,7 +8,7 @@ dotenv.config(); // Added to load environment variables
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 // Enable CORS with specific configuration
 app.use(cors({
