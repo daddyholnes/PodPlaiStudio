@@ -16,10 +16,52 @@ const LiveKitProvider = ({
   onDisconnected,
   onError
 }) => {
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const [roomError, setRoomError] = useState(null);
+
+  useEffect(() => {
+    if (!room) return;
+    
+    const createRoom = async () => {
+      setIsCreatingRoom(true);
+      try {
+        const response = await fetch('/api/livekit/rooms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomName: room })
+        });
+        if (!response.ok) throw new Error('Failed to create room');
+      } catch (err) {
+        setRoomError(err.message);
+        onError?.(err);
+      } finally {
+        setIsCreatingRoom(false);
+      }
+    };
+    createRoom();
+  }, [room]);
+
   if (!token || !serverUrl) {
     return (
       <div className="livekit-provider-placeholder">
         <p>Please provide LiveKit token and server URL.</p>
+      </div>
+    );
+  }
+
+  if (isCreatingRoom) {
+    return (
+      <div className="livekit-provider-placeholder">
+        <p>Creating room...</p>
+      </div>
+    );
+  }
+
+  if (roomError) {
+    return (
+      <div className="livekit-provider-placeholder">
+        <p>Error creating room: {roomError}</p>
+        <button onClick={() => window.location.reload()}>Retry</button>
       </div>
     );
   }

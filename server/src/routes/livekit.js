@@ -56,12 +56,31 @@ const setupLiveKitRoutes = (app) => {
       if (!roomName) {
         return res.status(400).json({ error: 'Room name is required' });
       }
+
+      if (!roomService) {
+        return res.status(503).json({ error: 'LiveKit service unavailable' });
+      }
       
-      const room = await roomService.createRoom({
-        name: roomName,
-        emptyTimeout: 60, // Delete room after 60 seconds of inactivity
-        maxParticipants: 10,
-      });
+      let room;
+      try {
+        room = await roomService.createRoom({
+          name: roomName,
+          emptyTimeout: 300, // Delete room after 5 minutes of inactivity
+          maxParticipants: 10,
+        });
+      } catch (error) {
+        // If room already exists, try to fetch it instead
+        if (error.message.includes('already exists')) {
+          const rooms = await roomService.listRooms();
+          room = rooms.find(r => r.name === roomName);
+        } else {
+          throw error;
+        }
+      }
+      
+      if (!room) {
+        throw new Error('Failed to create or find room');
+      }
       
       res.json({ room });
     } catch (error) {
