@@ -1,0 +1,107 @@
+Connecting to LiveKit
+Learn how to connect with LiveKit's SDKs.
+
+Overview
+Your application will connect to LiveKit using the Room object, which is the base construct in LiveKit. Think of it like a conference call — multiple participants can join a room and share realtime audio, video, and data with each other.
+
+Depending on your application, each participant might represent a user, an AI agent, a connected device, or some other program you've created. There is no limit on the number of participants in a room and each participant can publish audio, video, and data to the room.
+
+Installing the LiveKit SDK
+LiveKit includes open-source SDKs for every major platform including JavaScript, Swift, Android, React Native, Flutter, and Unity.
+
+LiveKit also has SDKs for realtime backend apps in Python, Node.js, Go, and Rust. These are designed to be used with the Agents framework for realtime AI applications.
+
+JavaScriptSwiftAndroidReact NativeFlutter
+Install the LiveKit SDK and optional React Components library:
+
+npm install livekit-client @livekit/components-react @livekit/components-styles --save
+Copy
+The SDK is also available using yarn or pnpm.
+
+Check out the dedicated quickstarts for React or Next.js if you're using one of those platforms.
+
+If your SDK is not listed above, check out the full list of platform-specific quickstarts and SDK reference docs for more details.
+
+Connecting to a room
+Rooms are identified by their name, which can be any unique string. The room itself is created automatically when the first participant joins, and is closed when the last participant leaves.
+
+You must use a participant identity when you connect to a room. This identity can be any string, but must be unique to each participant.
+
+Connecting to a room always requires two parameters:
+
+wsUrl: The WebSocket URL of your LiveKit server.
+LiveKit Cloud users can find theirs on the Project Settings page.
+Self-hosted users who followed this guide can use ws://localhost:7880 while developing.
+token: A unique access token which each participant must use to connect.
+The token encodes the room name, the participant's identity, and their permissions.
+For help generating tokens, see this guide.
+JavaScriptReactSwiftAndroidReact NativeFlutter
+const room = new Room();
+await room.connect(wsUrl, token);
+Copy
+Upon successful connection, the Room object will contain two key attributes: a localParticipant object, representing the current user, and remoteParticipants, an array of other participants in the room.
+
+Once connected, you can publish and subscribe to realtime media tracks or exchange data with other participants.
+
+LiveKit also emits a number of events on the Room object, such as when new participants join or tracks are published. For details, see Handling Events.
+
+Disconnection
+Call Room.disconnect() to leave the room. If you terminate the application without calling disconnect(), your participant disappears after 15 seconds.
+
+Note
+On some platforms, including JavaScript and Swift, Room.disconnect is called automatically when the application exits.
+
+Automatic disconnection
+Participants might get disconnected from a room due to server-initiated actions. This can happen if the room is closed using the DeleteRoom API or if a participant is removed with the RemoveParticipant API.
+
+In such cases, a Disconnected event is emitted, providing a reason for the disconnection. Common disconnection reasons include:
+
+DUPLICATE_IDENTITY: Disconnected because another participant with the same identity joined the room.
+ROOM_DELETED: The room was closed via the DeleteRoom API.
+PARTICIPANT_REMOVED: Removed from the room using the RemoveParticipant API.
+JOIN_FAILURE: Failure to connect to the room, possibly due to network issues.
+ROOM_CLOSED: The room was closed because all Standard and Ingress participants left.
+Connection reliability
+LiveKit enables reliable connectivity in a wide variety of network conditions. It tries the following WebRTC connection types in descending order:
+
+ICE over UDP: ideal connection type, used in majority of conditions
+TURN with UDP (3478): used when ICE/UDP is unreachable
+ICE over TCP: used when network disallows UDP (i.e. over VPN or corporate firewalls)
+TURN with TLS: used when firewall only allows outbound TLS connections
+CloudSelf-hosted
+LiveKit Cloud supports all of the above connection types. TURN servers with TLS are provided and maintained by LiveKit Cloud.
+
+Network changes and reconnection
+With WiFi and cellular networks, users may sometimes run into network changes that cause the connection to the server to be interrupted. This could include switching from WiFi to cellular or going through spots with poor connection.
+
+When this happens, LiveKit will attempt to resume the connection automatically. It reconnects to the signaling WebSocket and initiates an ICE restart for the WebRTC connection. This process usually results in minimal or no disruption for the user. However, if media delivery over the previous connection fails, users might notice a temporary pause in video, lasting a few seconds, until the new connection is established.
+
+In scenarios where an ICE restart is not feasible or unsuccessful, LiveKit will execute a full reconnection. As full reconnections take more time and might be more disruptive, a Reconnecting event is triggered. This allows your application to respond, possibly by displaying a UI element, during the reconnection process.
+
+This sequence goes like the following:
+
+ParticipantDisconnected fired for other participants in the room
+If there are tracks unpublished, you will receive LocalTrackUnpublished for them
+Emits Reconnecting
+Performs full reconnect
+Emits Reconnected
+For everyone currently in the room, you will receive ParticipantConnected
+Local tracks are republished, emitting LocalTrackPublished events
+In essence, the full reconnection sequence is identical to everyone else having left the room, and came back.
+
+On this page
+
+Overview
+Installing the LiveKit SDK
+Connecting to a room
+Disconnection
+Automatic disconnection
+Connection reliability
+Network changes and reconnection
+Was this page helpful?
+
+
+
+Previous
+
+CLI: Bootstrapping an application
