@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { useRoom } from '@livekit/components-react';
 import { createRoom, fetchRoomToken } from '../../services/liveKitService';
 
 const LiveKitTest = () => {
@@ -8,10 +7,8 @@ const LiveKitTest = () => {
   const [roomStatus, setRoomStatus] = useState('Not connected');
   const [error, setError] = useState(null);
   const [roomName, setRoomName] = useState(`test-room-${Date.now().toString(36)}`);
-  const [userName, setUserName] = useState(`user-${Date.now().toString(36)}`);
-  const [token, setToken] = useState(null);
-  
-  const room = useRoom();
+  const [identity, setIdentity] = useState(`user-${Date.now().toString(36)}`);
+  const [roomToken, setRoomToken] = useState(null);
 
   // Function to create a test room
   const handleCreateRoom = async () => {
@@ -23,11 +20,8 @@ const LiveKitTest = () => {
       
       if (roomData) {
         setRoomCreated(true);
-        setRoomStatus(`Room "${roomName}" created successfully`);
-        
-        // After creating the room, get a token to join it
-        const tokenData = await fetchRoomToken(roomName, userName);
-        setToken(tokenData.token);
+        setRoomStatus('Room created successfully');
+        console.log('Room created:', roomData);
       }
     } catch (err) {
       console.error('Error creating room:', err);
@@ -36,38 +30,52 @@ const LiveKitTest = () => {
     }
   };
 
+  // Function to get a token for the room
+  const handleGetToken = async () => {
+    try {
+      setError(null);
+      setRoomStatus('Getting room token...');
+      
+      const tokenData = await fetchRoomToken(roomName, identity);
+      
+      if (tokenData && tokenData.token) {
+        setRoomToken(tokenData.token);
+        setRoomStatus('Token obtained successfully');
+        console.log('Token received:', tokenData.token);
+      }
+    } catch (err) {
+      console.error('Error getting token:', err);
+      setError(err.message || 'Failed to get token');
+      setRoomStatus('Error getting token');
+    }
+  };
+
   return (
     <div className="livekit-test">
-      <h2>LiveKit Room Testing</h2>
-      
+      <h2>LiveKit Room Test</h2>
       <div>
         <p>Status: {roomStatus}</p>
         {error && <p style={{ color: 'red' }}>Error: {error}</p>}
-        {room ? (
-          <p style={{ color: 'green' }}>Connected to LiveKit room: {room.name}</p>
-        ) : (
-          <p>Not connected to a LiveKit room</p>
-        )}
         
-        <div>
+        <div style={{ marginBottom: '10px' }}>
           <label htmlFor="roomName">Room Name: </label>
           <input 
             type="text" 
             id="roomName" 
-            value={roomName}
+            value={roomName} 
             onChange={(e) => setRoomName(e.target.value)}
-            style={{ margin: '5px', padding: '5px' }}
+            style={{ marginLeft: '5px', padding: '5px' }}
           />
         </div>
         
-        <div>
-          <label htmlFor="userName">User Name: </label>
+        <div style={{ marginBottom: '10px' }}>
+          <label htmlFor="identity">Identity: </label>
           <input 
             type="text" 
-            id="userName" 
-            value={userName}
-            onChange={(e) => setUserName(e.target.value)}
-            style={{ margin: '5px', padding: '5px' }}
+            id="identity" 
+            value={identity} 
+            onChange={(e) => setIdentity(e.target.value)}
+            style={{ marginLeft: '5px', padding: '5px' }}
           />
         </div>
         
@@ -75,24 +83,43 @@ const LiveKitTest = () => {
           onClick={handleCreateRoom}
           disabled={roomCreated}
           style={{
+            marginRight: '10px',
             padding: '8px 16px',
-            backgroundColor: roomCreated ? '#ccc' : '#007bff',
+            backgroundColor: roomCreated ? '#ccc' : '#4CAF50',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
-            cursor: roomCreated ? 'default' : 'pointer',
-            marginTop: '10px'
+            cursor: roomCreated ? 'default' : 'pointer'
           }}
         >
-          {roomCreated ? 'Room Created' : 'Create Test Room'}
+          {roomCreated ? 'Room Created' : 'Create Room'}
+        </button>
+        
+        <button 
+          onClick={handleGetToken}
+          disabled={!roomCreated || roomToken !== null}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: !roomCreated || roomToken !== null ? '#ccc' : '#2196F3',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: !roomCreated || roomToken !== null ? 'default' : 'pointer'
+          }}
+        >
+          Get Token
         </button>
         
         {roomCreated && (
           <div style={{ marginTop: '10px' }}>
-            <p>Room is ready! You can now connect to it.</p>
-            <p>Room name: {roomName}</p>
-            <p>User name: {userName}</p>
-            {token && <p style={{ color: 'green' }}>Token received ✓</p>}
+            <p>Room is ready! Room name: {roomName}</p>
+          </div>
+        )}
+        
+        {roomToken && (
+          <div style={{ marginTop: '10px' }}>
+            <p>Token obtained successfully!</p>
+            <p>Token: <span style={{ fontSize: '12px', wordBreak: 'break-all' }}>{roomToken.substring(0, 20)}...{roomToken.substring(roomToken.length - 20)}</span></p>
           </div>
         )}
       </div>

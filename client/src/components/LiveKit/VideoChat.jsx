@@ -1,40 +1,36 @@
 
-import React from 'react';
-import {
-  GridLayout,
-  ParticipantTile,
-  useTracks,
-  useConnectionState,
-  ConnectionState
-} from '@livekit/components-react';
-import { Track } from 'livekit-client';
+import React, { useState, useEffect } from 'react';
 
 const VideoChat = () => {
-  // Get all camera and microphone tracks
-  const tracks = useTracks([
-    { source: Track.Source.Camera, withPlaceholder: true },
-    { source: Track.Source.Microphone, withPlaceholder: false },
-  ]);
-
-  const connectionState = useConnectionState();
-
   return (
-    <div className="video-chat-container" style={{ width: '100%', height: '400px' }}>
-      {connectionState === ConnectionState.Connected ? (
-        tracks.length > 0 ? (
-          <GridLayout tracks={tracks} style={{ height: '100%' }}>
-            {tracks.map((track) => (
-              <ParticipantTile key={track.sid} track={track} />
-            ))}
-          </GridLayout>
-        ) : (
-          <div className="no-participants">No participants with camera/microphone</div>
-        )
-      ) : (
-        <div className="connecting">
-          Connection status: {connectionState}...
-        </div>
-      )}
+    <div className="video-chat-container">
+      <h3>Video Chat Component</h3>
+      <p>This component will integrate with LiveKit for video functionality</p>
+      <div className="participants-area" style={{ 
+        border: '1px solid #ddd', 
+        padding: '20px', 
+        borderRadius: '5px',
+        marginTop: '15px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '200px',
+        backgroundColor: '#f5f5f5'
+      }}>
+        <p>Video participants will appear here</p>
+        <button style={{
+          marginTop: '10px',
+          padding: '8px 16px',
+          backgroundColor: '#2196F3',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer'
+        }}>
+          Turn on Camera
+        </button>
+      </div>
     </div>
   );
 };

@@ -18,11 +18,14 @@ const App = () => {
       setIsLoading(true);
       try {
         // Initialize app
-        setLivekitReady(true);
+        // Simulate delay for loading resources
+        setTimeout(() => {
+          setLivekitReady(true);
+          setIsLoading(false);
+        }, 1000);
       } catch (error) {
         console.error('App initialization error:', error);
         setAppError(error);
-      } finally {
         setIsLoading(false);
       }
     };
@@ -31,35 +34,43 @@ const App = () => {
   }, []);
 
   if (isLoading) {
-    return <div className="loading">Loading application...</div>;
+    return <div className="loading" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Loading application...</div>;
   }
 
   if (appError) {
-    return <div className="error">Error: {appError.message}</div>;
+    return <div className="error" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'red' }}>Error: {appError.message}</div>;
   }
 
   return (
     <div className="app-container">
-      <header className="app-header">
+      <header className="app-header" style={{ padding: '20px', backgroundColor: '#f8f9fa', borderBottom: '1px solid #e9ecef' }}>
         <h1>LiveKit Video Chat</h1>
       </header>
 
-      <main className="app-content">
-        <div className="livekit-test-container" style={{ margin: '20px 0' }}>
+      <main className="app-content" style={{ padding: '20px' }}>
+        <div className="livekit-test-container" style={{ margin: '20px 0', padding: '20px', border: '1px solid #ddd', borderRadius: '5px' }}>
           <LiveKitTest />
         </div>
         
         {livekitReady && (
-          <LiveKitProvider
-            roomName={roomName}
-            participantName={username}
-          >
-            <div className="video-section">
-              <h2>LiveKit Video Chat Demo</h2>
-              <VideoChat />
-              <ScreenShare />
-            </div>
-          </LiveKitProvider>
+          <div className="livekit-demo-container" style={{ margin: '20px 0', padding: '20px', border: '1px solid #ddd', borderRadius: '5px' }}>
+            <LiveKitProvider
+              roomName={roomName}
+              participantName={username}
+            >
+              <div className="video-section">
+                <h2>LiveKit Video Chat Demo</h2>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', marginTop: '20px' }}>
+                  <div style={{ flex: '1', minWidth: '300px' }}>
+                    <VideoChat />
+                  </div>
+                  <div style={{ flex: '1', minWidth: '300px' }}>
+                    <ScreenShare />
+                  </div>
+                </div>
+              </div>
+            </LiveKitProvider>
+          </div>
         )}
       </main>
     </div>

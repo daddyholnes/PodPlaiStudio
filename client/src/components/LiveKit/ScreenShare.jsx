@@ -1,48 +1,36 @@
-import React, { useState } from 'react';
-import { useLocalParticipant } from '@livekit/components-react';
+import React from 'react';
 
 const ScreenShare = () => {
-  const { localParticipant } = useLocalParticipant();
-  const [isSharing, setIsSharing] = useState(false);
-  const [error, setError] = useState(null); // Retained from original for error handling
-
-  const toggleScreenShare = async () => {
-    if (!localParticipant) {
-      console.error('No local participant found');
-      return;
-    }
-
-    try {
-      if (isSharing) {
-        // Stop screen sharing
-        await localParticipant.setScreenShareEnabled(false);
-        setIsSharing(false);
-        setError(null); // Clear error on successful stop
-      } else {
-        // Start screen sharing
-        await localParticipant.setScreenShareEnabled(true);
-        setIsSharing(true);
-        setError(null); // Clear error on successful start
-      }
-    } catch (error) {
-      console.error('Error toggling screen share:', error);
-      setError(error.message || 'Error toggling screen share'); // Set error message
-    }
-  };
-
   return (
-    <div className="screen-share-container">
-      <button 
-        className="screen-share-button"
-        onClick={toggleScreenShare}
-      >
-        {isSharing ? 'Stop Sharing' : 'Share Screen'}
-      </button>
-      <p className="screen-share-status">
-        {isSharing 
-          ? 'Your screen is being shared' 
-          : 'Click to share your screen'}
-      </p>
+    <div className="screen-share-container" style={{ marginTop: '20px' }}>
+      <h3>Screen Sharing</h3>
+      <p>This component will enable screen sharing functionality</p>
+      <div style={{ 
+        border: '1px solid #ddd', 
+        padding: '20px', 
+        borderRadius: '5px',
+        marginTop: '15px',
+        textAlign: 'center',
+        backgroundColor: '#f5f5f5',
+        height: '150px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <p>Screen share content will appear here</p>
+        <button style={{
+          marginTop: '10px',
+          padding: '8px 16px',
+          backgroundColor: '#4CAF50',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer'
+        }}>
+          Share Screen
+        </button>
+      </div>
     </div>
   );
 };
