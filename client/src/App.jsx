@@ -1,279 +1,176 @@
-import React, { useState, useEffect } from 'react';
-import VideoChat from './components/LiveKit/VideoChat';
-import ScreenShare from './components/LiveKit/ScreenShare';
-import MonacoEditor from './components/Editor/MonacoEditor';
+import React, { useState, useEffect, createContext, useCallback } from 'react';
+import { RoomProvider } from '@livekit/components-react';
 import XtermTerminal from './components/Terminal/XtermTerminal';
-import FileTree from './components/FileExplorer/FileTree';
-import { getFileContent, updateFile } from './services/fileService';
-import { configureWebSocketReconnection } from './services/webSocketService';
+import ScreenShare from './components/LiveKit/ScreenShare';
+import { createTerminalSession } from './services/terminalService';
 import './App.css';
 
+// Create contexts for sharing state
+export const TerminalContext = createContext(null);
+export const LiveKitContext = createContext(null);
+
 const App = () => {
-  const [roomName, setRoomName] = useState('');
-  const [username, setUsername] = useState('');
-  const [isJoined, setIsJoined] = useState(false);
-  const [currentFile, setCurrentFile] = useState(null);
-  const [fileContent, setFileContent] = useState('');
+  // Terminal state
   const [terminalSession, setTerminalSession] = useState(null);
-  const [editorLanguage, setEditorLanguage] = useState('javascript');
-  const [theme, setTheme] = useState('vs-dark');
-  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
-  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
-  const [bottomPanelHeight, setBottomPanelHeight] = useState(300);
+  const [terminalError, setTerminalError] = useState(null);
+  const [terminalLoading, setTerminalLoading] = useState(false);
   
-  // Initialize components
-  useEffect(() => {
-    initTerminal();
-    configureWebSocketReconnection();
-    
-    return () => {
-      // Cleanup if needed
-    };
-  }, []);
-  
-  // Load file content when selected
-  useEffect(() => {
-    if (currentFile) {
-      loadFileContent(currentFile);
-    }
-  }, [currentFile]);
-  
-  const initTerminal = async () => {
+  // LiveKit state
+  const [liveKitRoom, setLiveKitRoom] = useState(null);
+  const [liveKitToken, setLiveKitToken] = useState(null);
+  const [liveKitError, setLiveKitError] = useState(null);
+  const [liveKitLoading, setLiveKitLoading] = useState(false);
+
+  // App state
+  const [isLoading, setIsLoading] = useState(true);
+  const [appError, setAppError] = useState(null);
+
+  // Initialize terminal session
+  const initTerminal = useCallback(async () => {
+    if (terminalSession) return; // Already initialized
+
+    setTerminalLoading(true);
     try {
-      // Terminal session will be created within XtermTerminal component
-      console.log('Terminal will initialize with its own session');
+      const session = await createTerminalSession();
+      console.log('Terminal session created:', session);
+      setTerminalSession(session);
+      setTerminalError(null);
     } catch (error) {
-      console.error('Failed to initialize terminal:', error);
+      console.error('Failed to create terminal session:', error);
+      setTerminalError(error);
+      // Create a fallback session
+      setTerminalSession({
+        id: `fallback-${Date.now()}`,
+        status: 'fallback'
+      });
+    } finally {
+      setTerminalLoading(false);
     }
-  };
+  }, [terminalSession]);
 
-  // Terminal session handler
-  const handleTerminalSessionCreate = (session) => {
-    setTerminalSession(session);
-    console.log('Terminal session created:', session);
-  };
+  // Initialize LiveKit room
+  const initLiveKit = useCallback(async () => {
+    if (liveKitRoom) return; // Already initialized
 
-  const loadFileContent = async (filePath) => {
+    setLiveKitLoading(true);
     try {
-      const response = await getFileContent(filePath);
-      setFileContent(response.content);
+      // Simulated token - in production, get this from your server
+      const token = localStorage.getItem('livekit-token') || 
+        import.meta.env.VITE_LIVEKIT_TOKEN;
       
-      // Set language based on file extension
-      const extension = filePath.split('.').pop().toLowerCase();
-      switch (extension) {
-        case 'js':
-          setEditorLanguage('javascript');
-          break;
-        case 'ts':
-        case 'tsx':
-          setEditorLanguage('typescript');
-          break;
-        case 'py':
-          setEditorLanguage('python');
-          break;
-        case 'json':
-          setEditorLanguage('json');
-          break;
-        case 'html':
-          setEditorLanguage('html');
-          break;
-        case 'css':
-          setEditorLanguage('css');
-          break;
-        case 'md':
-          setEditorLanguage('markdown');
-          break;
-        default:
-          setEditorLanguage('javascript');
+      if (!token) {
+        throw new Error('LiveKit token not available');
       }
+      
+      setLiveKitToken(token);
+      setLiveKitError(null);
     } catch (error) {
-      console.error('Failed to load file content:', error);
+      console.error('Failed to initialize LiveKit:', error);
+      setLiveKitError(error);
+    } finally {
+      setLiveKitLoading(false);
     }
-  };
-  
-  const handleFileSelect = (filePath) => {
-    setCurrentFile(filePath);
-  };
-  
-  const handleCodeChange = (newValue) => {
-    setFileContent(newValue);
-  };
-  
-  const handleSaveFile = async () => {
-    if (currentFile) {
+  }, [liveKitRoom]);
+
+  // Initialize app
+  useEffect(() => {
+    const init = async () => {
+      setIsLoading(true);
       try {
-        await updateFile(currentFile, fileContent);
-        console.log('File saved successfully');
+        await Promise.allSettled([
+          initTerminal(),
+          initLiveKit()
+        ]);
       } catch (error) {
-        console.error('Failed to save file:', error);
+        console.error('App initialization error:', error);
+        setAppError(error);
+      } finally {
+        setIsLoading(false);
       }
-    }
-  };
-  
-  const handleJoinRoom = () => {
-    if (roomName && username) {
-      setIsJoined(true);
-    }
-  };
-  
-  const handleToggleLeftPanel = () => {
-    setIsLeftPanelOpen(!isLeftPanelOpen);
-  };
-  
-  const handleToggleRightPanel = () => {
-    setIsRightPanelOpen(!isRightPanelOpen);
-  };
-  
+    };
+    
+    init();
+  }, [initTerminal, initLiveKit]);
+
+  // Handle terminal session creation from child components
+  const handleTerminalSessionCreate = useCallback((session) => {
+    if (!session) return;
+    setTerminalSession(session);
+    console.log('Terminal session updated:', session);
+  }, []);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="app-loading">
+        <div className="spinner"></div>
+        <p>Initializing application...</p>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (appError) {
+    return (
+      <div className="app-error">
+        <h1>Failed to initialize application</h1>
+        <p>{appError.message}</p>
+        <button onClick={() => window.location.reload()}>Reload Application</button>
+      </div>
+    );
+  }
+
+  // Render the application with proper context providers
   return (
     <div className="app-container">
-      {!isJoined ? (
-        <div className="join-room-form" role="form" aria-label="Join video chat room">
-          <h2>Join Video Chat Room</h2>
-          <div className="form-group">
-            <label htmlFor="room-name">Room Name:</label>
-            <input
-              id="room-name"
-              type="text"
-              value={roomName}
-              onChange={(e) => setRoomName(e.target.value)}
-              placeholder="Enter room name"
-              aria-required="true"
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="username">Your Name:</label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your name"
-              aria-required="true"
-            />
-          </div>
-          <button 
-            onClick={handleJoinRoom} 
-            disabled={!roomName || !username}
-            aria-label="Join room"
-          >
-            Join Room
-          </button>
-        </div>
-      ) : (
-        <div className="workspace">
-          <header className="app-header">
-            <h1>PodPlai Studio</h1>
-            <div className="header-controls">
-              <button 
-                onClick={handleToggleLeftPanel}
-                className="panel-toggle"
-                aria-label={isLeftPanelOpen ? "Hide file explorer" : "Show file explorer"}
-                aria-pressed={isLeftPanelOpen}
-              >
-                {isLeftPanelOpen ? '◀' : '▶'} Files
-              </button>
-              <button 
-                onClick={handleToggleRightPanel}
-                className="panel-toggle"
-                aria-label={isRightPanelOpen ? "Hide video chat" : "Show video chat"}
-                aria-pressed={isRightPanelOpen}
-              >
-                Video {isRightPanelOpen ? '▶' : '◀'}
-              </button>
-              <button 
-                onClick={handleSaveFile} 
-                disabled={!currentFile}
-                aria-label="Save current file"
-              >
-                Save
-              </button>
-              <select 
-                value={theme} 
-                onChange={(e) => setTheme(e.target.value)}
-                aria-label="Editor theme"
-              >
-                <option value="vs-dark">Dark</option>
-                <option value="vs-light">Light</option>
-                <option value="hc-black">High Contrast</option>
-              </select>
-            </div>
-          </header>
-          
-          <div className="main-content">
-            {isLeftPanelOpen && (
-              <div className="file-explorer-panel">
-                <FileTree 
-                  onFileSelect={handleFileSelect} 
-                  currentFilePath={currentFile}
-                />
-              </div>
-            )}
-            
-            <div className="editor-panel">
-              <div className="editor-container">
-                {currentFile ? (
-                  <MonacoEditor
-                    language={editorLanguage}
-                    value={fileContent}
-                    onChange={handleCodeChange}
-                    theme={theme}
-                    filename={currentFile}
-                  />
-                ) : (
-                  <div className="no-file-selected">
-                    <p>Select a file from the explorer to edit</p>
-                  </div>
-                )}
-              </div>
-              
-              <div 
-                className="terminal-panel"
-                style={{ height: `${bottomPanelHeight}px` }}
-              >
-                <div className="panel-header">
-                  <h3>Terminal</h3>
-                  <div 
-                    className="drag-handle"
-                    aria-hidden="true"
-                    onMouseDown={(e) => {
-                      const startY = e.clientY;
-                      const startHeight = bottomPanelHeight;
-                      
-                      const onMouseMove = (moveEvent) => {
-                        const newHeight = startHeight - (moveEvent.clientY - startY);
-                        if (newHeight > 100 && newHeight < 800) {
-                          setBottomPanelHeight(newHeight);
-                        }
-                      };
-                      
-                      const onMouseUp = () => {
-                        document.removeEventListener('mousemove', onMouseMove);
-                        document.removeEventListener('mouseup', onMouseUp);
-                      };
-                      
-                      document.addEventListener('mousemove', onMouseMove);
-                      document.addEventListener('mouseup', onMouseUp);
-                    }}
-                  ></div>
-                </div>
-                <XtermTerminal 
-                  sessionId={terminalSession?.id} 
-                  onSessionCreate={handleTerminalSessionCreate} 
-                />
-              </div>
-            </div>
-            
-            {isRightPanelOpen && (
-              <div className="video-chat-panel">
-                <VideoChat roomName={roomName} username={username} />
-                <div className="screen-share-controls">
+      {/* Terminal Context Provider */}
+      <TerminalContext.Provider value={{ 
+        session: terminalSession, 
+        setSession: handleTerminalSessionCreate,
+        error: terminalError,
+        isLoading: terminalLoading
+      }}>
+        {/* LiveKit Context Provider */}
+        <LiveKitContext.Provider value={{
+          token: liveKitToken,
+          room: liveKitRoom,
+          setRoom: setLiveKitRoom,
+          error: liveKitError,
+          isLoading: liveKitLoading
+        }}>
+          {/* LiveKit Room Provider (if token is available) */}
+          {liveKitToken ? (
+            <RoomProvider
+              serverUrl={import.meta.env.VITE_LIVEKIT_SERVER_URL || "ws://localhost:7880"}
+              token={liveKitToken}
+              options={{
+                adaptiveStream: true,
+                dynacast: true
+              }}
+            >
+              <div className="main-content">
+                {/* Application Components */}
+                <div className="screen-share-container">
                   <ScreenShare />
                 </div>
+                
+                <div className="terminal-container">
+                  <XtermTerminal 
+                    sessionId={terminalSession?.id} 
+                    onSessionCreate={handleTerminalSessionCreate} 
+                  />
+                </div>
               </div>
-            )}
-          </div>
-        </div>
-      )}
+            </RoomProvider>
+          ) : (
+            <div className="livekit-unavailable">
+              <p>LiveKit functionality is currently unavailable.</p>
+              <p>{liveKitError?.message || "Token not provided"}</p>
+              <button onClick={initLiveKit}>Retry Connection</button>
+            </div>
+          )}
+        </LiveKitContext.Provider>
+      </TerminalContext.Provider>
     </div>
   );
 };

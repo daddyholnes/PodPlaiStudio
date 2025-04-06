@@ -1,60 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import {
-  LiveKitRoom,
+import React, { useEffect, useState } from 'react';
+import { 
   VideoConference,
-  GridLayout,
-  ParticipantTile,
-  useTracks,
-  RoomAudioRenderer,
-  ControlBar
+  ControlBar,
+  useTracks
 } from '@livekit/components-react';
-import '@livekit/components-styles';
 import { Track } from 'livekit-client';
-import { fetchRoomToken } from '../../services/liveKitService';
+import { withLiveKitProvider } from './LiveKitProvider';
 
-const VideoChat = ({ roomName, username }) => {
-  const [token, setToken] = useState('');
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    const getToken = async () => {
-      try {
-        if (roomName && username) {
-          const fetchedToken = await fetchRoomToken(roomName, username);
-          setToken(fetchedToken);
-        }
-      } catch (err) {
-        setError('Failed to get room token. Please try again.');
-        console.error('Error fetching token:', err);
-      }
-    };
-
-    getToken();
-  }, [roomName, username]);
-
-  if (error) {
-    return <div className="error-message">{error}</div>;
+const VideoChat = ({ liveKitAvailable }) => {
+  // Handle case when LiveKit is not available
+  if (!liveKitAvailable) {
+    return (
+      <div className="video-chat-placeholder">
+        <p>Video chat requires LiveKit configuration. Please check your environment variables.</p>
+      </div>
+    );
   }
-
-  if (!token) {
-    return <div>Loading...</div>;
-  }
-
+  
   return (
     <div className="video-chat-container">
-      <LiveKitRoom
-        video={true}
-        audio={true}
-        token={token}
-        serverUrl={import.meta.env.VITE_LIVEKIT_SERVER_URL || 'ws://localhost:7880'}
-        data-lk-theme="default"
-        style={{ height: '100%', width: '100%' }}
-      >
-        <VideoConference />
-        <RoomAudioRenderer />
-      </LiveKitRoom>
+      <VideoConference />
+      <ControlBar />
     </div>
   );
 };
 
-export default VideoChat;
+// Export the wrapped component to ensure it has LiveKit context
+export default withLiveKitProvider(VideoChat);

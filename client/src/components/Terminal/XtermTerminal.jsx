@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useContext } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
-import { createTerminalSession, sendTerminalCommand } from '../../services/terminalService';
+import { sendTerminalCommand, createTerminalSession } from '../../services/terminalService';
+import { TerminalContext } from '../../App';
 import '@xterm/xterm/css/xterm.css';
 
 const XtermTerminal = ({ sessionId, onSessionCreate }) => {
@@ -11,30 +12,34 @@ const XtermTerminal = ({ sessionId, onSessionCreate }) => {
   const fitAddonRef = useRef(null);
   const commandBufferRef = useRef('');
   const webSocketRef = useRef(null);
-  const [termSession, setTermSession] = useState(sessionId);
-
-  // Initialize terminal session if not provided
+  
+  // Get terminal context if available
+  const terminalContext = useContext(TerminalContext);
+  const contextSessionId = terminalContext?.session?.id;
+  
+  // Use provided sessionId or fall back to context
+  const effectiveSessionId = sessionId || contextSessionId;
+  
+  // Initialize terminal if needed
   useEffect(() => {
     const initSession = async () => {
-      if (!sessionId) {
+      if (!effectiveSessionId && onSessionCreate) {
         try {
           const session = await createTerminalSession();
-          setTermSession(session.id);
-          if (onSessionCreate) {
-            onSessionCreate(session);
-          }
+          onSessionCreate(session);
         } catch (error) {
-          console.warn('Failed to create terminal session:', error);
-          // Create a mock session ID to allow terminal to function
-          setTermSession(`mock-${Date.now()}`);
+          console.error('Failed to create terminal session:', error);
         }
       }
     };
     
     initSession();
-  }, [sessionId, onSessionCreate]);
+  }, [effectiveSessionId, onSessionCreate]);
 
   useEffect(() => {
+    // Only initialize the terminal if we have a DOM element to attach to
+    if (!terminalRef.current) return;
+    
     // Initialize terminal
     const terminal = new Terminal({
       cursorBlink: true,
@@ -61,21 +66,19 @@ const XtermTerminal = ({ sessionId, onSessionCreate }) => {
     terminal.loadAddon(webLinksAddon);
 
     // Open terminal in the container
-    if (terminalRef.current) {
-      terminal.open(terminalRef.current);
-      fitAddon.fit();
+    terminal.open(terminalRef.current);
+    fitAddon.fit();
 
-      // Connect to WebSocket for terminal communications
-      const currentSessionId = termSession || sessionId;
-      if (currentSessionId) {
-        connectWebSocket(currentSessionId);
-      }
-
-      // Welcome message
-      terminal.writeln('Welcome to PodPlai Studio Terminal');
-      terminal.writeln('Type "help" for available commands');
-      terminal.write('\r\n$ ');
+    // Connect to WebSocket for terminal communications
+    if (effectiveSessionId) {
+      connectWebSocket(effectiveSessionId);
     }
+
+    // Welcome message
+    terminal.writeln('Welcome to PodPlai Studio Terminal');
+    terminal.writeln(`Session ID: ${effectiveSessionId || 'Not connected'}`);
+    terminal.writeln('Type "help" for available commands');
+    terminal.write('\r\n$ ');
 
     // Handle terminal input
     terminal.onData((data) => {
@@ -113,29 +116,35 @@ const XtermTerminal = ({ sessionId, onSessionCreate }) => {
     return () => {
       // Cleanup
       window.removeEventListener('resize', handleResize);
-      terminal.dispose();
+      if (terminalInstanceRef.current) {
+        terminalInstanceRef.current.dispose();
+      }
       if (webSocketRef.current) {
         webSocketRef.current.close();
       }
     };
-  }, [sessionId, termSession]);
+  }, [effectiveSessionId]);
 
   const connectWebSocket = (sessionId) => {
     // Create a simulated terminal connection since we don't have node-pty anymore
-    console.log('Simulating terminal WebSocket connection');
+    console.log('Simulating terminal WebSocket connection for session:', sessionId);
     
     // For demo, we'll use a fake websocket that simulates responses
     webSocketRef.current = {
       readyState: WebSocket.OPEN,
       send: (message) => {
-        const parsedMessage = JSON.parse(message);
-        if (parsedMessage.type === 'command') {
-          setTimeout(() => {
-            const fakeResponse = `Simulated output for: ${parsedMessage.content}\n`;
-            if (terminalInstanceRef.current) {
-              terminalInstanceRef.current.write(fakeResponse);
-            }
-          }, 100);
+        try {
+          const parsedMessage = JSON.parse(message);
+          if (parsedMessage.type === 'command') {
+            setTimeout(() => {
+              const fakeResponse = `Simulated output for: ${parsedMessage.content}\n`;
+              if (terminalInstanceRef.current) {
+                terminalInstanceRef.current.write(fakeResponse);
+              }
+            }, 100);
+          }
+        } catch (error) {
+          console.error('Error processing WebSocket message:', error);
         }
       },
       close: () => console.log('Terminal WebSocket disconnected')
@@ -163,9 +172,13 @@ const XtermTerminal = ({ sessionId, onSessionCreate }) => {
     try {
       if (webSocketRef.current && webSocketRef.current.readyState === WebSocket.OPEN) {
         webSocketRef.current.send(JSON.stringify({ type: 'command', content: command }));
+      } else if (effectiveSessionId) {
+        // Fallback to HTTP API
+        const response = await sendTerminalCommand(effectiveSessionId, command);
+        terminalInstanceRef.current.writeln(response.output || `Executed: ${command}`);
       } else {
-        // Fallback to simulated HTTP API
-        terminalInstanceRef.current.writeln(`Simulated output for: ${command}`);
+        // No connection at all
+        terminalInstanceRef.current.writeln(`Error: No active terminal session`);
       }
     } catch (error) {
       terminalInstanceRef.current.writeln(`Error: ${error.message || 'Failed to execute command'}`);
@@ -180,7 +193,7 @@ const XtermTerminal = ({ sessionId, onSessionCreate }) => {
         height: '100%', 
         width: '100%',
         backgroundColor: '#1e1e1e',
-        padding: '8px',
+        border: '1px solid #444',
         borderRadius: '4px',
         overflow: 'hidden'
       }}
