@@ -82,6 +82,16 @@ if (fs.existsSync(publicPath)) {
 // Import LiveKit routes
 import livekitRoutes from './routes/livekit.js';
 
+// Debug middleware for webhook requests
+app.use('/api/livekit/webhook', (req, res, next) => {
+  console.log('Webhook request received at:', new Date().toISOString());
+  console.log('Request URL:', req.originalUrl);
+  console.log('Request method:', req.method);
+  console.log('Request headers:', JSON.stringify(req.headers, null, 2));
+  console.log('Request body:', JSON.stringify(req.body, null, 2)); // Added to log request body
+  next();
+});
+
 // Set up routes
 app.use('/api/livekit', livekitRoutes); // Use the LiveKit routes
 

@@ -70,7 +70,8 @@ router.post('/join-room', (req, res) => {
 // Webhook endpoint to receive LiveKit events
 router.post('/webhook', express.json(), (req, res) => {
   try {
-    console.log('Received webhook from LiveKit:', req.body);
+    console.log('Received webhook from LiveKit:', JSON.stringify(req.body, null, 2));
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
     
     // Validate webhook request using API key and secret
     const apiKey = process.env.LIVEKIT_API_KEY;
@@ -84,26 +85,31 @@ router.post('/webhook', express.json(), (req, res) => {
       return res.status(400).json({ error: 'Missing signature header' });
     }
     
+    // TODO: Implement proper signature validation when needed
+    // For development purposes, we'll accept all webhooks
+    
     // Process webhook event based on type
     const event = req.body;
     switch (event.event) {
       case 'room_started':
-        console.log(`Room started: ${event.room.name}`);
+        console.log(`Room started: ${event.room?.name || 'unknown'}`);
+        console.log(`Room SID: ${event.room?.sid || 'unknown'}`);
+        console.log(`Creation time: ${new Date(parseInt(event.room?.creationTime || '0') * 1000).toISOString()}`);
         break;
       case 'room_finished':
-        console.log(`Room finished: ${event.room.name}`);
+        console.log(`Room finished: ${event.room?.name || 'unknown'}`);
         break;
       case 'participant_joined':
-        console.log(`Participant joined: ${event.participant.identity} in room ${event.room.name}`);
+        console.log(`Participant joined: ${event.participant?.identity || 'unknown'} in room ${event.room?.name || 'unknown'}`);
         break;
       case 'participant_left':
-        console.log(`Participant left: ${event.participant.identity} from room ${event.room.name}`);
+        console.log(`Participant left: ${event.participant?.identity || 'unknown'} from room ${event.room?.name || 'unknown'}`);
         break;
       default:
         console.log(`Received event: ${event.event}`);
     }
     
-    return res.status(200).send('Webhook received');
+    return res.status(200).json({ success: true, message: 'Webhook received and processed' });
   } catch (error) {
     console.error('Error processing webhook:', error);
     return res.status(500).json({ error: 'Failed to process webhook' });
