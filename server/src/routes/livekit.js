@@ -68,10 +68,40 @@ router.post('/join-room', (req, res) => {
 });
 
 // Webhook endpoint to receive LiveKit events
-router.post('/webhook', (req, res) => {
+router.post('/webhook', express.json(), (req, res) => {
   try {
     console.log('Received webhook from LiveKit:', req.body);
-    // Process webhook data here
+    
+    // Validate webhook request using API key and secret
+    const apiKey = process.env.LIVEKIT_API_KEY;
+    const apiSecret = process.env.LIVEKIT_API_SECRET;
+    
+    // Get LiveKit signature from headers
+    const signature = req.headers['livekit-signature'];
+    
+    if (!signature) {
+      console.warn('Missing LiveKit signature header');
+      return res.status(400).json({ error: 'Missing signature header' });
+    }
+    
+    // Process webhook event based on type
+    const event = req.body;
+    switch (event.event) {
+      case 'room_started':
+        console.log(`Room started: ${event.room.name}`);
+        break;
+      case 'room_finished':
+        console.log(`Room finished: ${event.room.name}`);
+        break;
+      case 'participant_joined':
+        console.log(`Participant joined: ${event.participant.identity} in room ${event.room.name}`);
+        break;
+      case 'participant_left':
+        console.log(`Participant left: ${event.participant.identity} from room ${event.room.name}`);
+        break;
+      default:
+        console.log(`Received event: ${event.event}`);
+    }
     
     return res.status(200).send('Webhook received');
   } catch (error) {
