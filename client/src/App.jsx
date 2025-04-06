@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import LiveKitTest from './components/LiveKit/LiveKitTest';
+import LiveKitProvider from './components/LiveKit/LiveKitProvider'; // Added import for LiveKitProvider
+import LiveKitTest from './components/LiveKit/LiveKitTest'; // Added import for LiveKitTest
 import '@livekit/components-styles';
 
 const App = () => {
@@ -39,7 +40,9 @@ const App = () => {
       </header>
 
       <main className="app-main" style={{ flex: 1, padding: '20px', overflow: 'hidden' }}>
-        <LiveKitTest />
+        <LiveKitProvider> {/* Wrapped LiveKitTest with LiveKitProvider */}
+          <LiveKitTest />
+        </LiveKitProvider>
       </main>
     </div>
   );

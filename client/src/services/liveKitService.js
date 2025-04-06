@@ -1,34 +1,33 @@
-
 import axios from 'axios';
 
 /**
- * Fetches a LiveKit token for a specific room and participant
+ * Fetches a LiveKit access token from the server
  * @param {string} roomName - The name of the room to join
  * @param {string} identity - The identity of the participant
- * @returns {Promise<string>} The token
+ * @returns {Promise<{token: string, url: string}>} Token and LiveKit server URL
  */
 export const fetchRoomToken = async (roomName, identity) => {
   try {
     console.log(`Fetching token for room: ${roomName}, identity: ${identity}`);
-    const response = await axios.get(`/livekit/token`, {
+    const response = await axios.get('/livekit/token', {
       params: {
         room: roomName,
         identity: identity
       }
     });
 
-    return response.data.token;
+    return response.data;
   } catch (error) {
-    console.error('Error fetching LiveKit token:', error);
-    throw new Error('Failed to fetch LiveKit token');
+    console.error('Error fetching room token:', error);
+    throw error;
   }
 };
 
 /**
  * Creates a new LiveKit room
- * @param {Object} options - Room creation options
- * @param {string} options.roomName - The name of the room to create
- * @returns {Promise<Object>} Room creation result
+ * @param {Object} params - Room parameters
+ * @param {string} params.roomName - The name of the room to create
+ * @returns {Promise<Object>} Room details
  */
 export const createRoom = async ({ roomName }) => {
   try {
@@ -40,12 +39,12 @@ export const createRoom = async ({ roomName }) => {
     return response.data;
   } catch (error) {
     console.error('Error creating LiveKit room:', error);
-    throw new Error('Failed to create LiveKit room');
+    throw error;
   }
 };
 
 /**
- * Fetches a list of active LiveKit rooms
+ * Lists all available LiveKit rooms
  * @returns {Promise<Array>} List of rooms
  */
 export const listRooms = async () => {
@@ -54,7 +53,7 @@ export const listRooms = async () => {
     return response.data.rooms;
   } catch (error) {
     console.error('Error listing LiveKit rooms:', error);
-    throw new Error('Failed to list LiveKit rooms');
+    throw error;
   }
 };
 

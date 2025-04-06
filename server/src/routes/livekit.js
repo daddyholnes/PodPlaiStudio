@@ -1,10 +1,5 @@
 
-const { AccessToken } = require('livekit-server-sdk');
-
-/**
- * Sets up LiveKit related routes
- * @param {Express} app - Express application
- */
+import { AccessToken } from 'livekit-server-sdk';
 
 const setupLiveKitRoutes = (app) => {
   const apiKey = process.env.LIVEKIT_API_KEY || 'devkey';
@@ -44,38 +39,33 @@ const setupLiveKitRoutes = (app) => {
       // Generate the JWT token
       const jwt = token.toJwt();
       console.log(`Generated LiveKit token for ${identity} in room ${room}`);
-
-      // Return the token
-      res.json({ token: jwt });
+      
+      res.json({ token: jwt, url: livekitHost });
     } catch (error) {
-      console.error('Error generating LiveKit token:', error);
+      console.error('Error generating token:', error);
       res.status(500).json({ error: 'Failed to generate token: ' + error.message });
     }
   });
-  
-  // Add room creation endpoint
+
+  // Create room endpoint
   app.post('/livekit/rooms', async (req, res) => {
     try {
       const { roomName } = req.body;
       
       if (!roomName) {
-        return res.status(400).json({ error: 'Room name is required' });
+        return res.status(400).json({ error: 'Missing required parameter: roomName' });
       }
       
-      console.log(`Room creation requested: ${roomName}`);
+      console.log(`Creating room: ${roomName}`);
       
-      // For this demo, we'll return a success message without actually creating a room via the LiveKit API
-      // In a production environment, you would use the RoomService from livekit-server-sdk
-      const room = {
-        name: roomName,
-        emptyTimeout: 10 * 60, // 10 minutes
-        maxParticipants: 20,
-        creationTime: new Date().toISOString()
-      };
-      
+      // In a production environment, you would use the LiveKit API to create a room
+      // For now, we'll just return success since we're using default rooms
       res.json({ 
-        success: true, 
-        room
+        name: roomName,
+        emptyTimeout: 10 * 60,
+        maxParticipants: 20,
+        creationTime: new Date().toISOString(),
+        status: 'created'
       });
     } catch (error) {
       console.error('Error creating room:', error);
@@ -108,4 +98,4 @@ const setupLiveKitRoutes = (app) => {
   console.log('LiveKit routes initialized');
 };
 
-module.exports = { setupLiveKitRoutes };
+export { setupLiveKitRoutes };
