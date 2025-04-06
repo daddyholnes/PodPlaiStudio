@@ -1,124 +1,80 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { LiveKitRoom } from '@livekit/components-react';
 import '@livekit/components-styles';
-import '@livekit/components-styles/prefabs';
 
-// Create context
-const LiveKitContext = createContext();
+// Default server URL from environment variable or fallback
+const DEFAULT_SERVER_URL = import.meta.env.VITE_LIVEKIT_SERVER_URL || 'wss://dartopia-gvu1e64v.livekit.cloud';
+const DEFAULT_ROOM = 'podplay-default-room';
 
-export const useLiveKit = () => useContext(LiveKitContext);
+// Context for LiveKit state
+const LiveKitContext = createContext(null);
 
-export const LiveKitProvider = ({ children }) => {
-  const [token, setToken] = useState(null);
-  const [roomName, setRoomName] = useState('');
-  const [userName, setUserName] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
+// Provider component to manage LiveKit connection
+export function LiveKitProvider({ children }) {
+  const [token, setToken] = useState('');
+  const [roomName, setRoomName] = useState(DEFAULT_ROOM);
+  const [serverUrl, setServerUrl] = useState(DEFAULT_SERVER_URL);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState(null);
-  const [connectionState, setConnectionState] = useState('disconnected');
+  const [userName, setUserName] = useState('User-' + Math.floor(Math.random() * 10000));
 
-  const serverUrl = import.meta.env.VITE_LIVEKIT_SERVER_URL || 'wss://dartopia-gvu1e64v.livekit.cloud';
+  // Function to fetch token from server
+  const fetchToken = async (room, username) => {
+    setIsConnecting(true);
+    setError(null);
 
-  useEffect(() => {
-    console.log("LiveKit Provider - Current state:", { 
-      token: token ? "Token exists" : "No token",
-      roomName, 
-      userName, 
-      isConnected,
-      serverUrl,
-      connectionState
-    });
-  }, [token, roomName, userName, isConnected, connectionState]);
-
-  // Function to join a room
-  const joinRoom = async (room, identity) => {
     try {
-      console.log(`Attempting to join room: ${room} as ${identity}`);
-      setError(null);
-      setRoomName(room);
-      setUserName(identity);
-      setConnectionState('connecting');
-
-      const response = await fetch('/api/livekit/join-room', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ room, identity }),
-      });
+      const response = await fetch(`/api/livekit/token?room=${room}&username=${username}`);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to join room');
+        throw new Error(`Error fetching token: ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log('Successfully received token');
       setToken(data.token);
-      setConnectionState('token_received');
       return data.token;
     } catch (err) {
+      console.error('Error fetching LiveKit token:', err);
       setError(err.message);
-      setConnectionState('error');
-      console.error('Error joining room:', err);
       return null;
+    } finally {
+      setIsConnecting(false);
     }
   };
 
-  // Function to leave a room
-  const leaveRoom = () => {
-    console.log('Leaving room');
-    setToken(null);
-    setRoomName('');
-    setUserName('');
-    setIsConnected(false);
-    setConnectionState('disconnected');
+  // Connect to room with current settings
+  const connectToRoom = async (room = roomName, username = userName) => {
+    setRoomName(room);
+    setUserName(username);
+    return await fetchToken(room, username);
   };
 
-  const handleConnected = () => {
-    console.log('LiveKit connected successfully!');
-    setIsConnected(true);
-    setConnectionState('connected');
+  // Update server URL
+  const setServer = (url) => {
+    setServerUrl(url);
   };
 
-  const handleDisconnected = () => {
-    console.log('LiveKit disconnected');
-    setIsConnected(false);
-    setConnectionState('disconnected');
-  };
-
-  const handleError = (err) => {
-    console.error('LiveKit connection error:', err);
-    setError(err?.message || 'Unknown connection error');
-    setConnectionState('error');
-  };
-
+  // Create context value
   const contextValue = {
     token,
     roomName,
+    serverUrl,
     userName,
-    isConnected,
+    isConnecting,
     error,
-    connectionState,
-    joinRoom,
-    leaveRoom,
-    serverUrl
+    connectToRoom,
+    setServer,
+    setUserName
   };
 
   return (
     <LiveKitContext.Provider value={contextValue}>
-      {token ? (
+      {token && serverUrl ? (
         <LiveKitRoom
           serverUrl={serverUrl}
           token={token}
-          onDisconnected={handleDisconnected}
-          onConnected={handleConnected}
-          onError={handleError}
+          connectOptions={{ autoSubscribe: true }}
           data-lk-theme="default"
-          video={true}
-          audio={true}
-          connectOptions={{
-            autoSubscribe: true
-          }}
         >
           {children}
         </LiveKitRoom>
@@ -127,4 +83,15 @@ export const LiveKitProvider = ({ children }) => {
       )}
     </LiveKitContext.Provider>
   );
-};
+}
+
+// Hook to use LiveKit context
+export function useLiveKit() {
+  const context = useContext(LiveKitContext);
+
+  if (!context) {
+    throw new Error('useLiveKit must be used within a LiveKitProvider');
+  }
+
+  return context;
+}
