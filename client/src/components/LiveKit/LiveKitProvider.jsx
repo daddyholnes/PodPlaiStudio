@@ -1,11 +1,10 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { LiveKitRoom } from '@livekit/components-react';
-import '@livekit/components-styles';
+import '@livekit/components-styles'; // Import CSS for LiveKit components
 
 const LiveKitProvider = ({ children, roomName, participantName }) => {
-  // For simplicity, we'll hardcode the LiveKit server URL in this component
-  // In production, you'd want to use environment variables
+  // For simplicity using the LiveKit cloud instance from your server
   const serverUrl = 'wss://dartopia-gvu1e64v.livekit.cloud';
   
   const [token, setToken] = useState(null);
@@ -21,7 +20,12 @@ const LiveKitProvider = ({ children, roomName, participantName }) => {
 
     const getToken = async () => {
       try {
+        console.log(`Fetching token for room: ${roomName}, participant: ${participantName}`);
         const response = await fetch(`/livekit/token?room=${roomName}&identity=${participantName}`);
+        if (!response.ok) {
+          throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+        }
+        
         const data = await response.json();
         
         if (data.token) {
@@ -30,7 +34,7 @@ const LiveKitProvider = ({ children, roomName, participantName }) => {
           throw new Error('Invalid token response');
         }
       } catch (err) {
-        console.error('Failed to fetch token:', err);
+        console.error('Failed to fetch LiveKit token:', err);
         setError(err.message || 'Failed to connect to LiveKit');
       } finally {
         setIsLoading(false);

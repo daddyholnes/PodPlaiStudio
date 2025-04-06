@@ -1,43 +1,48 @@
 import axios from 'axios';
 
 /**
- * Fetches a LiveKit token for a specific room and identity
- * @param {string} roomName - Name of the room to join
- * @param {string} identity - User identity (unique identifier)
- * @returns {Promise<Object>} Token data
+ * Fetches a LiveKit token for a specific room and participant
+ * @param {string} roomName - The name of the room to join
+ * @param {string} identity - The identity of the participant
+ * @returns {Promise<string>} The token
  */
 export const fetchRoomToken = async (roomName, identity) => {
   try {
-    console.log(`Fetching token for room: ${roomName}, identity: ${identity}`);
-    const response = await axios.get(`/livekit/token?room=${encodeURIComponent(roomName)}&identity=${encodeURIComponent(identity)}`);
-    console.log('Token response:', response.data);
-    return response.data;
+    const response = await axios.get(`/livekit/token`, {
+      params: {
+        room: roomName,
+        identity: identity
+      }
+    });
+
+    return response.data.token;
   } catch (error) {
     console.error('Error fetching LiveKit token:', error);
-    throw new Error(error.response?.data?.error || 'Failed to fetch LiveKit token');
+    throw new Error('Failed to fetch LiveKit token');
   }
 };
 
 /**
  * Creates a new LiveKit room
- * @param {Object} params - Room creation parameters
- * @param {string} params.roomName - Name of the room to create
- * @returns {Promise<Object>} Room data
+ * @param {Object} options - Room creation options
+ * @param {string} options.roomName - The name of the room to create
+ * @returns {Promise<Object>} Room creation result
  */
 export const createRoom = async ({ roomName }) => {
   try {
-    console.log(`Creating room: ${roomName}`);
-    const response = await axios.post('/livekit/rooms', { roomName });
-    console.log('Create room response:', response.data);
+    const response = await axios.post('/livekit/rooms', {
+      roomName
+    });
+
     return response.data;
   } catch (error) {
     console.error('Error creating LiveKit room:', error);
-    throw new Error(error.response?.data?.error || 'Failed to create LiveKit room');
+    throw new Error('Failed to create LiveKit room');
   }
 };
 
 /**
- * Lists all available LiveKit rooms
+ * Fetches a list of active LiveKit rooms
  * @returns {Promise<Array>} List of rooms
  */
 export const listRooms = async () => {
@@ -45,8 +50,8 @@ export const listRooms = async () => {
     const response = await axios.get('/livekit/rooms');
     return response.data.rooms;
   } catch (error) {
-    console.error('Error listing rooms:', error);
-    throw new Error(error.response?.data?.error || 'Failed to list rooms');
+    console.error('Error listing LiveKit rooms:', error);
+    throw new Error('Failed to list LiveKit rooms');
   }
 };
 
@@ -92,4 +97,13 @@ export const removeParticipant = async (roomName, identity) => {
     console.error('Error removing participant:', error);
     throw new Error('Failed to remove participant');
   }
+};
+
+export default {
+  fetchRoomToken,
+  createRoom,
+  listRooms,
+  deleteRoom,
+  listParticipants,
+  removeParticipant
 };
