@@ -78,27 +78,27 @@ const setupLiveKitRoutes = (app) => {
   app.get('/livekit/token', (req, res) => {
     try {
       const { identity, name } = req.query;
-      
+
       // Validate required parameters
       if (!identity) {
         return res.status(400).json({ error: 'Missing identity parameter' });
       }
-      
+
       // Get LiveKit credentials from environment variables
       const apiKey = process.env.LIVEKIT_API_KEY;
       const apiSecret = process.env.LIVEKIT_API_SECRET;
-      
+
       if (!apiKey || !apiSecret) {
         console.error('LiveKit credentials not configured');
         return res.status(500).json({ error: 'LiveKit credentials not configured' });
       }
-      
+
       // Create token with specified identity
       const at = new AccessToken(apiKey, apiSecret, {
         identity: String(identity),
         name: String(name || identity),
       });
-      
+
       // Grant permissions based on application needs
       at.addGrant({ 
         roomJoin: true, 
@@ -106,11 +106,11 @@ const setupLiveKitRoutes = (app) => {
         canPublish: true,
         canSubscribe: true 
       });
-      
+
       // Generate the JWT token
       const token = at.toJwt();
       console.log(`Generated token for ${identity}`);
-      
+
       // Return the token to the client
       res.json({ token });
     } catch (error) {
@@ -137,5 +137,5 @@ app.get('*', (req, res) => {
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server running at http://0.0.0.0:${PORT}`);
 });
