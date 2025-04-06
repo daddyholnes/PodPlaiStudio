@@ -10,6 +10,18 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Setup Google Cloud credentials if they exist in environment variables
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+  try {
+    const tempCredPath = path.join(__dirname, 'google-credentials-temp.json');
+    fs.writeFileSync(tempCredPath, process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = tempCredPath;
+    console.log('Google Cloud credentials configured from environment variable');
+  } catch (error) {
+    console.error('Error setting up Google credentials:', error);
+  }
+}
+
 // Enable CORS with specific configuration
 app.use(cors({
   origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173', 'https://dartopia.repl.co', 'https://dartopia-gvu1e64v.livekit.cloud', 'wss://dartopia-gvu1e64v.livekit.cloud'],
