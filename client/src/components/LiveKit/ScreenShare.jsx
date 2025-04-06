@@ -1,32 +1,45 @@
 
 import React, { useState } from 'react';
-import { 
-  useLocalParticipant,
-  useScreenShare
-} from '@livekit/components-react';
+import { useLocalParticipant } from '@livekit/components-react';
 
 const ScreenShare = () => {
-  const { localParticipant } = useLocalParticipant();
-  const { isScreenShareEnabled, toggleScreenShare } = useScreenShare();
+  const [isSharing, setIsSharing] = useState(false);
   const [error, setError] = useState(null);
+  const { localParticipant } = useLocalParticipant();
   
-  const handleScreenShareToggle = async () => {
+  const startScreenShare = async () => {
+    if (!localParticipant) {
+      setError('LiveKit connection not established');
+      return;
+    }
+    
     try {
-      await toggleScreenShare();
+      await localParticipant.setScreenShareEnabled(true);
+      setIsSharing(true);
       setError(null);
     } catch (err) {
       console.error('Screen share error:', err);
       setError(err.message || 'Failed to share screen');
+      setIsSharing(false);
     }
   };
   
-  // Check if LiveKit is properly connected
+  const stopScreenShare = async () => {
+    if (!localParticipant) return;
+    
+    try {
+      await localParticipant.setScreenShareEnabled(false);
+      setIsSharing(false);
+    } catch (err) {
+      console.error('Error stopping screen share:', err);
+      setError(err.message);
+    }
+  };
+  
   if (!localParticipant) {
     return (
       <div className="screen-share-placeholder">
-        <div className="screen-share-disabled-notice">
-          <p>Waiting for LiveKit connection...</p>
-        </div>
+        <p>Waiting for LiveKit connection...</p>
       </div>
     );
   }
@@ -35,11 +48,11 @@ const ScreenShare = () => {
     <div className="screen-share-container">
       <div className="screen-share-controls">
         <button 
-          className={`screen-share-button ${isScreenShareEnabled ? 'active' : ''}`}
-          onClick={handleScreenShareToggle}
-          aria-label={isScreenShareEnabled ? 'Stop sharing' : 'Share screen'}
+          className={`screen-share-button ${isSharing ? 'active' : ''}`}
+          onClick={isSharing ? stopScreenShare : startScreenShare}
+          aria-label={isSharing ? 'Stop sharing' : 'Share screen'}
         >
-          {isScreenShareEnabled ? 'Stop Sharing' : 'Share Screen'}
+          {isSharing ? 'Stop Sharing' : 'Share Screen'}
         </button>
         
         {error && (
@@ -47,9 +60,9 @@ const ScreenShare = () => {
         )}
         
         <p className="screen-share-status">
-          {isScreenShareEnabled 
+          {isSharing 
             ? 'Your screen is being shared' 
-            : 'Start sharing your screen'}
+            : 'Click to share your screen'}
         </p>
       </div>
     </div>

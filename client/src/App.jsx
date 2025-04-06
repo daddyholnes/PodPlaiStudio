@@ -54,23 +54,21 @@ const App = () => {
 
     setLiveKitLoading(true);
     try {
-      // Simulated token - in production, get this from your server
-      const token = localStorage.getItem('livekit-token') || 
-        import.meta.env.VITE_LIVEKIT_TOKEN;
+      // We'll use the createRoom and fetchRoomToken functions from liveKitService
+      // instead of relying on a pre-existing token
+      const roomName = 'default-room'; // or generate a unique room for this session
+      const participantName = `user-${Date.now().toString(36)}`;
       
-      if (!token) {
-        throw new Error('LiveKit token not available');
-      }
-      
-      setLiveKitToken(token);
+      // No need to set token here as LiveKitProvider will handle that
       setLiveKitError(null);
+      console.log('LiveKit initialization prepared for room:', roomName);
     } catch (error) {
       console.error('Failed to initialize LiveKit:', error);
       setLiveKitError(error);
     } finally {
       setLiveKitLoading(false);
     }
-  }, [liveKitRoom]);
+  }, []);
 
   // Initialize app
   useEffect(() => {
