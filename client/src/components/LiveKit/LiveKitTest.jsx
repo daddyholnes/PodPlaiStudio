@@ -37,54 +37,51 @@ const LiveKitTest = () => {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 border rounded shadow-sm">
       <h2 className="text-xl font-bold mb-4">LiveKit Test</h2>
       
       {!isJoined ? (
-        <div>
-          <p>Status: {roomStatus}</p>
-          {error && <p style={{ color: 'red' }}>Error: {error}</p>}
-          
-          <div className="mb-4">
-            <label className="block mb-2">Room Name:</label>
-            <input
-              type="text"
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="block">Room Name:</label>
+            <input 
+              type="text" 
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
-              className="border p-2 w-full mb-2"
-            />
-            
-            <label className="block mb-2">Participant Name:</label>
-            <input
-              type="text"
-              value={participantName}
-              onChange={(e) => setParticipantName(e.target.value)}
-              className="border p-2 w-full"
+              className="w-full p-2 border rounded"
             />
           </div>
           
-          <button 
-            onClick={handleCreateRoom}
-            className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
-            disabled={roomCreated}
-          >
-            {roomCreated ? 'Room Created' : 'Create Room'}
-          </button>
+          <div className="space-y-2">
+            <label className="block">Your Name:</label>
+            <input 
+              type="text" 
+              value={participantName}
+              onChange={(e) => setParticipantName(e.target.value)}
+              className="w-full p-2 border rounded"
+            />
+          </div>
           
-          <button
-            onClick={handleJoinRoom}
-            className="bg-green-500 text-white px-4 py-2 rounded"
-            disabled={!roomName || !participantName}
-          >
-            Join Room
-          </button>
-          
-          {roomCreated && (
-            <div style={{ marginTop: '10px' }}>
-              <p>Room is ready! You can now join it.</p>
-              <p>Room name: {roomName}</p>
-            </div>
+          {!roomCreated ? (
+            <button 
+              onClick={handleCreateRoom}
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+            >
+              Create Room
+            </button>
+          ) : (
+            <button 
+              onClick={handleJoinRoom}
+              className="bg-green-500 text-white px-4 py-2 rounded"
+            >
+              Join Room
+            </button>
           )}
+          
+          <div className="mt-2">
+            <p>Status: {roomStatus}</p>
+            {error && <p className="text-red-500">Error: {error}</p>}
+          </div>
         </div>
       ) : (
         <div>
